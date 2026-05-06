@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oses Yunuseli Dijital Menü</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        body { background-color: #ffffff; font-family: sans-serif; }
+        .oses-green { color: #97D700; }
+        .oses-bg-green { background-color: #97D700; }
+        .oses-red { color: #CB333B; }
+        .oses-bg-red { background-color: #CB333B; }
+        .nav-link { background-color: #97D700; color: white; transition: 0.2s; font-weight: 600; text-transform: capitalize; }
+        .nav-link.active { background-color: #ffffff; color: #97D700; border-bottom: 3px solid #97D700; border-radius: 0; }
+        .img-box { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #fff; }
+        .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .hidden { display: none !important; }
+        .category-content { transition: max-height 0.4s ease-in-out; overflow: hidden; }
+        .collapsed { max-height: 0; }
+        .expanded { max-height: 5000px; }
+        .checkbox-custom { width: 20px; height: 20px; accent-color: #CB333B; cursor: pointer; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 1. ANA MENÜ SAYFASI -->
+    <div id="page-menu">
+        <header class="oses-bg-green shadow-md sticky top-0 z-50 text-white">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 cursor-pointer" onclick="showLogin()">
+                    <img src="https://www.oses.com.tr/assets/images/oses.png" style="height: 80px;">
+                    <div class="border-l-2 border-white/30 pl-4">
+                        <h2 class="oses-red font-black text-xl italic uppercase tracking-tighter bg-white px-3 py-0.5 rounded-tr-xl">YUNUSELİ ŞUBE</h2>
+                        <p class="text-[13px] font-black mt-1 leading-tight uppercase">YUNUSELİ MAH. FUAT KUŞÇUOĞLU CAD.<br>NO:175/C</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center bg-white px-8 py-2 rounded-2xl shadow-xl">
+                    <div class="flex items-center gap-4">
+                        <img src="https://media.istockphoto.com/id/2112173239/tr/vekt%C3%B6r/courier-man-with-quick-fast-motorcycle-scooter-for-delivery-order-service-icon-illustration.jpg?s=612x612&w=0&k=20&c=W5Vv5_RFLb8k5NjXHqqPvqPf4qJambXHn2PiLAOFXFs=" class="h-14 w-14 object-contain">
+                        <span class="font-black text-xl tracking-tighter uppercase italic oses-red">ALO PAKET</span>
+                    </div>
+                    <a href="tel:05412201665" class="text-2xl font-black text-gray-800">0(541) 220 1665</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <h1 class="text-3xl font-black oses-green mb-8 uppercase tracking-tight">ÜRÜNLER</h1>
+            <div class="flex flex-wrap gap-1 bg-[#97D700] p-1 rounded-sm mb-10 shadow-sm" id="category-bar">
+                <button onclick="filterCategory('all')" class="nav-link flex-1 py-3 px-2 active">Tümü</button>
+                <button onclick="filterCategory('çiğköfte')" class="nav-link flex-1 py-3 px-2">Çiğ Köfteler</button>
+                <button onclick="filterCategory('dürüm')" class="nav-link flex-1 py-3 px-2">Dürümler</button>
+                <button onclick="filterCategory('tatlı')" class="nav-link flex-1 py-3 px-2">Tatlılar</button>
+                <button onclick="filterCategory('içecek')" class="nav-link flex-1 py-3 px-2">İçecekler</button>
+                <button onclick="filterCategory('extra')" class="nav-link flex-1 py-3 px-2">Ekstralar</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" id="menu-container"></div>
+        </div>
+    </div>
+
+    <!-- 2. DETAY SAYFASI -->
+    <div id="page-detail" class="hidden min-h-screen bg-gray-50">
+        <div id="detail-content" class="max-w-xl mx-auto bg-white min-h-screen shadow-lg"></div>
+    </div>
+
+    <!-- 3. ADMİN GİRİŞ -->
+    <div id="page-login" class="hidden min-h-screen flex items-center justify-center p-6 bg-slate-900">
+        <div class="bg-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-700 text-center">
+            <img src="https://www.oses.com.tr/assets/images/oses.png" class="h-16 mx-auto mb-6">
+            <h2 class="text-xl font-black text-white mb-6 italic uppercase">Yönetici Girişi</h2>
+            <input type="password" id="admin-pass" placeholder="Şifre" class="w-full p-4 mb-4 bg-slate-700 rounded-xl text-white outline-none border border-transparent focus:border-[#97D700]">
+            <button onclick="login()" class="w-full oses-bg-red py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 transition">GİRİŞ YAP</button>
+            <button onclick="hideLogin()" class="w-full mt-4 text-slate-400 text-sm">Geri Dön</button>
+        </div>
+    </div>
+
+    <!-- 4. ADMİN PANEL -->
+    <div id="page-admin" class="hidden min-h-screen bg-slate-900 text-white p-4 md:p-10">
+        <div class="max-w-3xl mx-auto">
+            <header class="flex justify-between items-center mb-8 border-b-2 border-[#97D700] pb-4">
+                <img src="https://www.oses.com.tr/assets/images/oses.png" style="height: 60px;">
+                <div class="text-right uppercase">
+                    <span class="block text-[10px] text-slate-500 font-bold tracking-widest">YUNUSELİ ŞUBE</span>
+                    <span class="oses-red font-black italic">ADMİN YÖNETİMİ</span>
+                </div>
+            </header>
+
+            <div class="bg-slate-800 p-6 rounded-[2rem] shadow-2xl mb-12 border border-slate-700">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-24 h-24 border-2 border-dashed border-slate-600 rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center">
+                            <img id="img-preview" src="https://www.oses.com.tr/assets/images/oses.png" class="max-w-full max-h-full object-contain">
+                        </div>
+                    </div>
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="edit-id" value="">
+                        <select id="f-cat" class="w-full p-3 bg-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#97D700]">
+                            <option value="çiğköfte">ÇİĞ KÖFTE</option>
+                            <option value="dürüm">DÜRÜM</option>
+                            <option value="tatlı">TATLI</option>
+                            <option value="içecek">İÇECEK</option>
+                            <option value="extra">EXTRA</option>
+                        </select>
+                        <input type="number" id="f-price" placeholder="Fiyat ₺" class="w-full p-3 bg-slate-700 rounded-xl outline-none">
+                        <input type="text" id="f-name" placeholder="Ürün Adı" class="w-full p-3 bg-slate-700 rounded-xl outline-none col-span-2">
+                        <input type="text" id="f-img" oninput="document.getElementById('img-preview').src = this.value || 'https://www.oses.com.tr/assets/images/oses.png'" placeholder="Resim URL" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl outline-none col-span-2">
+                        <textarea id="f-desc" rows="2" placeholder="Açıklama" class="w-full p-3 bg-slate-700 rounded-xl outline-none col-span-2"></textarea>
+                        <div class="col-span-2 flex gap-2">
+                            <button id="main-btn" onclick="saveProduct()" class="flex-1 oses-bg-red py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl">SİSTEME KAYDET</button>
+                            <button onclick="logout()" class="bg-slate-600 px-6 py-4 rounded-2xl font-bold uppercase text-xs">ÇIKIŞ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="copyFullCode()" class="w-full mb-8 bg-yellow-600 hover:bg-yellow-700 py-4 rounded-2xl font-black text-xs uppercase shadow-lg transition">Kodu Kopyala ve GitHub'a Yapıştır (Kalıcı Güncelleme)</button>
+            <div id="master-category-container" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GÖMÜLÜ MENÜ VERİSİ ---
+        const defaultItems = [
+            {"id":"1778063004803","cat":"çiğköfte","name":"AİLE BOYU (1000 Gram)","price":"680","img":"https://www.oses.com.tr/photos/urunler/v1b1f-1kg.jpg","desc":"1000 gram çiğ köfte, 8 adet lavaş, yeşillik, çiğ köfte sos, acı sos"},
+            {"id":"1778063423982","cat":"dürüm","name":"DÜRÜM","price":"110","img":"https://www.oses.com.tr/photos/urunler/p4u11-durum.jpg","desc":"100 gram çiğ köfte, lavaş, yeşillik, sos"},
+            {"id":"1778063902858","cat":"içecek","name":"KÜÇÜK AYRAN (170 mL)","price":"30","img":"https://www.oses.com.tr/photos/urunler/8mxeb-kucuk-ayran.jpg","desc":""}
+        ];
+
+        let items = JSON.parse(localStorage.getItem('osesMenu')) || defaultItems;
+        let currentCategory = 'all';
+        const catOrder = ["çiğköfte", "dürüm", "tatlı", "içecek", "extra"];
+        const catNames = {"çiğköfte": "ÇİĞ KÖFTELER", "dürüm": "DÜRÜMLER", "tatlı": "TATLILAR", "içecek": "İÇECEKLER", "extra": "EKSTRALAR"};
+
+        // MENÜ FONKSİYONLARI
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+            let displayItems = currentCategory === 'all' ? items : items.filter(i => i.cat === currentCategory);
+            
+            displayItems.forEach((item) => {
+                container.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform p-4" onclick="showDetail(${items.indexOf(item)})">
+                        <div class="img-box"><img src="${item.img || 'https://www.oses.com.tr/assets/images/oses.png'}" onerror="this.src='https://www.oses.com.tr/assets/images/oses.png'"></div>
+                        <div class="mt-6 text-center">
+                            <h3 class="text-sm font-bold text-[#4c7c00] uppercase mb-1 min-h-[32px]">${item.name}</h3>
+                            <p class="text-[10px] text-gray-400 line-clamp-2 mb-3 h-8">${item.desc || ''}</p>
+                            <div class="text-xl font-black oses-red">₺${item.price},00</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(cat)));
+            renderMenu();
+        }
+
+        function showDetail(idx) {
+            const it = items[idx];
+            document.getElementById('page-menu').classList.add('hidden');
+            document.getElementById('page-detail').classList.remove('hidden');
+            document.getElementById('detail-content').innerHTML = `
+                <div class="relative bg-white h-[400px] flex items-center justify-center p-10"><img src="${it.img}" class="max-h-full object-contain"><button onclick="hideDetail()" class="absolute top-6 left-6 bg-white shadow-md p-3 rounded-full text-[#97D700]">← Geri</button></div>
+                <div class="p-8"><h1 class="text-2xl font-black text-[#4c7c00] uppercase mb-2">${it.name}</h1><div class="text-3xl font-black text-[#CB333B] mb-6">₺${it.price},00</div>
+                <div class="border-t pt-6"><h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Açıklama</h2><p class="text-gray-600 leading-relaxed text-lg">${it.desc || 'Açıklama mevcut değil.'}</p></div>
+                <button onclick="hideDetail()" class="w-full oses-bg-red text-white py-4 rounded-lg font-bold text-lg mt-12 uppercase">Listeye Dön</button></div>`;
+            window.scrollTo(0,0);
+        }
+
+        function hideDetail() { document.getElementById('page-detail').classList.add('hidden'); document.getElementById('page-menu').classList.remove('hidden'); }
+
+        // ADMİN PANEL FONKSİYONLARI
+        function showLogin() { document.getElementById('page-menu').classList.add('hidden'); document.getElementById('page-login').classList.remove('hidden'); }
+        function hideLogin() { document.getElementById('page-login').classList.add('hidden'); document.getElementById('page-menu').classList.remove('hidden'); }
+        function login() { if(document.getElementById('admin-pass').value === "1616") { document.getElementById('page-login').classList.add('hidden'); document.getElementById('page-admin').classList.remove('hidden'); renderAdmin(); } else { alert("Şifre Yanlış!"); } }
+        function logout() { location.reload(); }
+
+        function renderAdmin() {
+            const container = document.getElementById('master-category-container');
+            container.innerHTML = '';
+            catOrder.forEach(catKey => {
+                const catItems = items.filter(it => it.cat === catKey);
+                const section = document.createElement('div');
+                section.className = "bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden mb-4 shadow-lg";
+                section.innerHTML = `
+                    <div class="flex justify-between items-center p-5 cursor-pointer" onclick="toggleCategory('${catKey}')">
+                        <h3 class="font-black text-sm uppercase italic">${catNames[catKey]} (${catItems.length})</h3>
+                        <div class="flex gap-4 items-center">
+                            <button onclick="event.stopPropagation(); toggleSelectAll('${catKey}')" class="text-[10px] font-bold text-blue-400">SEÇ</button>
+                            <button onclick="event.stopPropagation(); deleteSelected('${catKey}')" class="text-[10px] font-bold text-red-500">SİL</button>
+                        </div>
+                    </div>
+                    <div id="content-${catKey}" class="category-content collapsed bg-slate-900/20 px-5 pb-5">
+                        <div id="list-${catKey}" class="space-y-2 pt-4">
+                            ${catItems.map(it => `<div class="flex justify-between items-center bg-slate-800 p-3 rounded-2xl border border-slate-700"><div class="flex items-center gap-4"><input type="checkbox" data-cat="${catKey}" value="${it.id}" class="checkbox-custom"><img src="${it.img}" class="w-10 h-10 rounded-lg object-cover"><div class="text-[11px] font-bold uppercase">${it.name} - ${it.price}₺</div></div><button onclick="editProduct('${it.id}')" class="text-blue-400 font-bold text-[10px]">DÜZENLE</button></div>`).join('')}
+                        </div>
+                    </div>`;
+                container.appendChild(section);
+            });
+        }
+
+        function toggleCategory(catKey) { document.getElementById(`content-${catKey}`).classList.toggle('collapsed'); }
+
+        function saveProduct() {
+            const editId = document.getElementById('edit-id').value;
+            const newItem = { id: editId || Date.now().toString(), cat: document.getElementById('f-cat').value, name: document.getElementById('f-name').value, price: document.getElementById('f-price').value, img: document.getElementById('f-img').value, desc: document.getElementById('f-desc').value };
+            if(editId) items = items.map(it => it.id === editId ? newItem : it); else items.push(newItem);
+            localStorage.setItem('osesMenu', JSON.stringify(items));
+            renderAdmin();
+            alert("Ürün tarayıcıya kaydedildi. Kalıcı olması için Kodu Kopyala yapıp GitHub'a yapıştırın!");
+        }
+
+        function editProduct(id) {
+            const it = items.find(x => x.id === id);
+            document.getElementById('edit-id').value = id;
+            document.getElementById('f-cat').value = it.cat;
+            document.getElementById('f-name').value = it.name;
+            document.getElementById('f-price').value = it.price;
+            document.getElementById('f-img').value = it.img;
+            document.getElementById('f-desc').value = it.desc;
+            document.getElementById('img-preview').src = it.img;
+            document.getElementById('main-btn').innerText = "GÜNCELLE";
+            window.scrollTo(0,0);
+        }
+
+        function deleteSelected(catKey) {
+            const sel = Array.from(document.querySelectorAll(`input[type="checkbox"][data-cat="${catKey}"]:checked`)).map(c => c.value);
+            if(confirm("Siliniyor?")) { items = items.filter(it => !sel.includes(it.id)); localStorage.setItem('osesMenu', JSON.stringify(items)); renderAdmin(); }
+        }
+
+        function toggleSelectAll(catKey) {
+            const cbs = document.querySelectorAll(`input[type="checkbox"][data-cat="${catKey}"]`);
+            const all = Array.from(cbs).every(c => c.checked);
+            cbs.forEach(c => c.checked = !all);
+        }
+
+        function copyFullCode() {
+            const updatedCode = document.documentElement.outerHTML.replace(/const defaultItems = \[[\s\S]*?\];/, `const defaultItems = ${JSON.stringify(items)};`);
+            navigator.clipboard.writeText(updatedCode).then(() => alert("KOD KOPYALANDI! GitHub'a yapıştırabilirsiniz."));
+        }
+
+        window.onload = renderMenu;
+    </script>
+</body>
+</html>
