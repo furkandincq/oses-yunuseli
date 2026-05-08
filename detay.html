@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oses Detay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .oses-bg-red { background-color: #CB333B; }
+        .oses-bg-green { background-color: #97D700; }
+        .detail-img-box { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: white; border-bottom: 1px solid #eee; }
+        .detail-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="content" class="max-w-xl mx-auto bg-white min-h-screen shadow-lg pb-10">
+        <div class="p-10 text-center text-gray-400">Yükleniyor...</div>
+    </div>
+    <script>
+        const DB_URL = "https://oses-yunuseli-default-rtdb.firebaseio.com/oses.json";
+        let cart = JSON.parse(localStorage.getItem('oses_cart')) || [];
+        let currentItem = null;
+
+        function getCartItemId() {
+            if(!currentItem) return null;
+            let ingredients = [];
+            document.querySelectorAll('.ingredient-cb:checked').forEach(cb => ingredients.push(cb.value));
+            let addedNames = [];
+            document.querySelectorAll('.extra-cb:checked').forEach(cb => addedNames.push(cb.value));
+            return currentItem.id + '_ing_' + ingredients.sort().join('-') + '_ext_' + addedNames.sort().join('-');
+        }
+
+        function calcPrice() {
+            if(!currentItem) return;
+            let total = Number(currentItem.price);
+            document.querySelectorAll('.extra-cb:checked').forEach(cb => total += Number(cb.getAttribute('data-price')));
+            document.getElementById('detail-price-display').innerText = `₺${total},00`;
+            renderActionButton();
+        }
+
+        function renderActionButton() {
+            const cid = getCartItemId();
+            const existing = cart.find(c => c.cartItemId === cid);
+            const area = document.getElementById('action-area');
+            if(!area) return;
+
+            if(existing) {
+                area.innerHTML = `
+                    <div class="flex items-center justify-between bg-gray-100 rounded-xl p-1 border-2 border-green-500">
+                        <button onclick="updateQty('${cid}', -1)" class="w-1/4 py-4 bg-red-500 text-white font-black text-2xl rounded-lg">-</button>
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Sepette</span>
+                            <span class="text-2xl font-black text-gray-800">${existing.qty} Adet</span>
+                        </div>
+                        <button onclick="updateQty('${cid}', 1)" class="w-1/4 py-4 bg-green-500 text-white font-black text-2xl rounded-lg">+</button>
+                    </div>
+                `;
+            } else {
+                area.innerHTML = `<button onclick="addToCart()" class="w-full oses-bg-green text-white py-5 rounded-xl font-black tracking-widest text-lg uppercase shadow-lg active:scale-95 transition">Sepete Ekle</button>`;
+            }
+        }
+
+        function addToCart() {
+            const cid = getCartItemId();
+            let ingredients = [];
+            document.querySelectorAll('.ingredient-cb:checked').forEach(cb => ingredients.push(cb.value));
+            let added = [];
+            let finalPrice = Number(currentItem.price);
+            document.querySelectorAll('.extra-cb:checked').forEach(cb => {
+                added.push({ name: cb.value, price: Number(cb.getAttribute('data-price')) });
+                finalPrice += Number(cb.getAttribute('data-price'));
+            });
+
+            cart.push({
+                cartItemId: cid, id: currentItem.id, name: currentItem.name, 
+                price: finalPrice, qty: 1, ingredients: ingredients, added: added
+            });
+            saveCart();
+        }
+
+        function updateQty(cid, change) {
+            const idx = cart.findIndex(c => c.cartItemId === cid);
+            if(idx > -1) {
+                cart[idx].qty += change;
+                if(cart[idx].qty <= 0) cart.splice(idx, 1);
+            }
+            saveCart();
+        }
+
+        function saveCart() {
+            localStorage.setItem('oses_cart', JSON.stringify(cart));
+            renderActionButton();
+        }
+
+        async function loadDetail() {
+            const params = new URLSearchParams(window.location.search);
+            const targetId = params.get('id');
+            const res = await fetch(DB_URL);
+            const data = await res.json();
+            currentItem = data.items.find(it => it.id == targetId);
+            
+            if(currentItem) {
+                let optionsHtml = '';
+                
+                if(currentItem.removables) {
+                    optionsHtml += `<div class="mt-6 border-t pt-6"><h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Malzeme Seçimi</h3><div class="grid grid-cols-2 gap-2">`;
+                    currentItem.removables.split(',').forEach(r => {
+                        optionsHtml += `<label class="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border cursor-pointer"><input type="checkbox" value="${r.trim()}" class="w-5 h-5 accent-green-500 ingredient-cb" checked onchange="renderActionButton()"> <span class="text-xs font-bold text-gray-700">${r.trim()}</span></label>`;
+                    });
+                    optionsHtml += `</div></div>`;
+                }
+                
+                if(currentItem.extras) {
+                    optionsHtml += `<div class="mt-6 border-t pt-6"><h3 class="text-xs font-bold text-green-500 uppercase mb-3">Ekstralar</h3><div class="grid grid-cols-1 gap-2">`;
+                    currentItem.extras.split(',').forEach(e => {
+                        const [eName, ePrice] = e.split(':');
+                        optionsHtml += `<label class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border cursor-pointer"><div class="flex items-center gap-2"><input type="checkbox" value="${eName.trim()}" data-price="${ePrice.trim()}" class="w-5 h-5 accent-green-500 extra-cb" onchange="calcPrice()"> <span class="text-xs font-bold text-gray-700">${eName.trim()}</span></div><span class="text-xs font-black text-green-600">+${ePrice.trim()}₺</span></label>`;
+                    });
+                    optionsHtml += `</div></div>`;
+                }
+
+                document.getElementById('content').innerHTML = `
+                    <div class="relative">
+                        <div class="detail-img-box"><img src="${currentItem.img || 'https://www.oses.com.tr/assets/images/oses.png'}"></div>
+                        <button onclick="history.back()" class="absolute top-6 left-6 bg-white shadow-md p-3 rounded-full"><svg class="w-6 h-6 text-[#97D700]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                    </div>
+                    <div class="p-8">
+                        <h1 class="text-2xl font-black text-[#4c7c00] uppercase mb-2">${currentItem.name}</h1>
+                        <div class="text-3xl font-black text-[#CB333B] mb-6" id="detail-price-display">₺${currentItem.price},00</div>
+                        <div class="text-gray-600 text-sm mb-4">${currentItem.desc || ''}</div>
+                        ${optionsHtml}
+                        <div id="action-area" class="mt-10"></div>
+                        <button onclick="history.back()" class="w-full mt-6 bg-gray-200 text-gray-600 font-bold text-sm uppercase py-4 rounded-xl">Menüye Geri Dön</button>
+                    </div>`;
+                renderActionButton();
+            }
+        }
+        window.onload = loadDetail;
+    </script>
+</body>
+</html>

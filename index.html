@@ -2,265 +2,506 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Oses Yunuseli Dijital Menü</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
-        body { background-color: #ffffff; font-family: sans-serif; }
+        body { background-color: #ffffff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         .oses-green { color: #97D700; }
         .oses-bg-green { background-color: #97D700; }
         .oses-red { color: #CB333B; }
-        .oses-bg-red { background-color: #CB333B; }
-        .nav-link { background-color: #97D700; color: white; transition: 0.2s; font-weight: 600; text-transform: capitalize; }
-        .nav-link.active { background-color: #ffffff; color: #97D700; border-bottom: 3px solid #97D700; border-radius: 0; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .nav-link { background-color: transparent; color: white; transition: 0.2s; font-weight: 600; text-transform: capitalize; border-radius: 0.5rem; }
+        .nav-link.active { background-color: #ffffff; color: #97D700; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         .img-box { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #fff; }
         .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .hidden { display: none !important; }
-        .category-content { transition: max-height 0.4s ease-in-out; overflow: hidden; }
-        .collapsed { max-height: 0; }
-        .expanded { max-height: 5000px; }
-        .checkbox-custom { width: 20px; height: 20px; accent-color: #CB333B; cursor: pointer; }
+        #cart-modal, #preview-modal { backdrop-filter: blur(5px); }
+        .payment-radio:checked + div { border-color: #97D700; background-color: #f0fdf4; color: #166534; }
     </style>
 </head>
-<body class="pb-20">
-
-    <!-- 1. ANA MENÜ SAYFASI -->
-    <div id="page-menu">
-        <header class="oses-bg-green shadow-md sticky top-0 z-50 text-white">
-            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4 cursor-pointer" onclick="showLogin()">
-                    <img src="https://www.oses.com.tr/assets/images/oses.png" style="height: 80px;">
-                    <div class="border-l-2 border-white/30 pl-4">
-                        <h2 class="oses-red font-black text-xl italic uppercase tracking-tighter bg-white px-3 py-0.5 rounded-tr-xl">YUNUSELİ ŞUBE</h2>
-                        <p class="text-[13px] font-black mt-1 leading-tight uppercase">YUNUSELİ MAH. FUAT KUŞÇUOĞLU CAD.<br>NO:175/C</p>
-                    </div>
-                </div>
-                <div class="flex flex-col items-center bg-white px-8 py-2 rounded-2xl shadow-xl">
-                    <div class="flex items-center gap-4">
-                        <img src="https://media.istockphoto.com/id/2112173239/tr/vekt%C3%B6r/courier-man-with-quick-fast-motorcycle-scooter-for-delivery-order-service-icon-illustration.jpg?s=612x612&w=0&k=20&c=W5Vv5_RFLb8k5NjXHqqPvqPf4qJambXHn2PiLAOFXFs=" class="h-14 w-14 object-contain">
-                        <span class="font-black text-xl tracking-tighter uppercase italic oses-red">ALO PAKET</span>
-                    </div>
-                    <a href="tel:05412201665" class="text-2xl font-black text-gray-800">0(541) 220 1665</a>
+<body class="pb-36">
+    <header class="oses-bg-green text-white">
+        <div class="max-w-6xl mx-auto px-2 py-1.5 md:py-3 flex justify-between items-center gap-1">
+            <div class="flex items-center gap-1.5 md:gap-4">
+                <img src="https://www.oses.com.tr/assets/images/oses.png" class="h-7 md:h-16">
+                <div class="border-l-2 border-white/30 pl-1.5 md:pl-4">
+                    <h2 class="oses-red font-black text-[10px] md:text-xl italic uppercase tracking-tighter bg-white px-1.5 py-[1px] rounded-tr-lg inline-block leading-none">YUNUSELİ ŞUBE</h2>
+                    <p class="text-[6px] md:text-[13px] font-black mt-0.5 leading-tight uppercase">YUNUSELİ MAH. FUAT KUŞÇUOĞLU CAD.<br>NO:175/C</p>
                 </div>
             </div>
-        </header>
-
-        <div class="max-w-6xl mx-auto px-4 py-8">
-            <h1 class="text-3xl font-black oses-green mb-8 uppercase tracking-tight">ÜRÜNLER</h1>
-            <div class="flex flex-wrap gap-1 bg-[#97D700] p-1 rounded-sm mb-10 shadow-sm" id="category-bar">
-                <button onclick="filterCategory('all')" class="nav-link flex-1 py-3 px-2 active">Tümü</button>
-                <button onclick="filterCategory('çiğköfte')" class="nav-link flex-1 py-3 px-2">Çiğ Köfteler</button>
-                <button onclick="filterCategory('dürüm')" class="nav-link flex-1 py-3 px-2">Dürümler</button>
-                <button onclick="filterCategory('tatlı')" class="nav-link flex-1 py-3 px-2">Tatlılar</button>
-                <button onclick="filterCategory('içecek')" class="nav-link flex-1 py-3 px-2">İçecekler</button>
-                <button onclick="filterCategory('extra')" class="nav-link flex-1 py-3 px-2">Ekstralar</button>
+            <div class="flex items-center bg-white px-2 md:px-6 py-1 md:py-2 rounded-lg md:rounded-2xl shadow-md gap-1.5 flex-shrink-0">
+                <img src="https://media.istockphoto.com/id/2112173239/tr/vekt%C3%B6r/courier-man-with-quick-fast-motorcycle-scooter-for-delivery-order-service-icon-illustration.jpg?s=612x612&w=0&k=20&c=W5Vv5_RFLb8k5NjXHqqPvqPf4qJambXHn2PiLAOFXFs=" class="h-6 w-6 md:h-12 md:w-12 object-contain">
+                <div class="flex flex-col items-center">
+                    <span class="font-black text-[8px] md:text-xl tracking-tighter uppercase italic oses-red leading-none">ALO PAKET</span>
+                    <a href="tel:05412201665" class="text-[11px] md:text-2xl font-black text-gray-800 leading-none mt-0.5">0541 220 1665</a>
+                </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" id="menu-container"></div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-3 py-2 md:py-6">
+        <div class="sticky top-0 z-40 bg-white pt-2 pb-2 -mx-3 px-3 md:mx-0 md:px-0 mb-4 border-b border-gray-100/50">
+            <div class="flex overflow-x-auto hide-scrollbar gap-1.5 bg-[#97D700] p-1 rounded-xl shadow-sm whitespace-nowrap snap-x" id="category-bar"></div>
+        </div>
+
+        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" id="menu-container"></div>
+        
+        <div class="mt-12 mb-6 flex justify-center">
+            <a href="Https://search.google.com/local/writereview?placeid=ChIJu2kRIg4VyhQR_RcQUMKe9-E" target="_blank" class="bg-white border-2 border-[#97D700] shadow-md rounded-2xl p-4 flex items-center gap-4 hover:shadow-lg hover:-translate-y-1 transition transform duration-200 w-full md:w-auto">
+                <div class="bg-green-50 p-3 rounded-full">
+                    <svg class="w-8 h-8 text-[#97D700]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                </div>
+                <div>
+                    <h4 class="font-black text-gray-800 text-sm md:text-base uppercase">Bizi Google'da Değerlendirin</h4>
+                    <p class="text-xs text-gray-500 font-bold mt-0.5">Yorumlarınız bizim için çok değerli! ⭐⭐⭐⭐⭐</p>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- 2. DETAY SAYFASI -->
-    <div id="page-detail" class="hidden min-h-screen bg-gray-50">
-        <div id="detail-content" class="max-w-xl mx-auto bg-white min-h-screen shadow-lg"></div>
-    </div>
-
-    <!-- 3. ADMİN GİRİŞ -->
-    <div id="page-login" class="hidden min-h-screen flex items-center justify-center p-6 bg-slate-900">
-        <div class="bg-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-700 text-center">
-            <img src="https://www.oses.com.tr/assets/images/oses.png" class="h-16 mx-auto mb-6">
-            <h2 class="text-xl font-black text-white mb-6 italic uppercase">Yönetici Girişi</h2>
-            <input type="password" id="admin-pass" placeholder="Şifre" class="w-full p-4 mb-4 bg-slate-700 rounded-xl text-white outline-none border border-transparent focus:border-[#97D700]">
-            <button onclick="login()" class="w-full oses-bg-red py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 transition">GİRİŞ YAP</button>
-            <button onclick="hideLogin()" class="w-full mt-4 text-slate-400 text-sm">Geri Dön</button>
+    <div id="cart-bar" class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-50 hidden pb-safe">
+        <div class="max-w-6xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div class="bg-[#97D700] p-2.5 md:p-3 rounded-full text-white relative shadow-md">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="cart-count-badge" class="absolute -top-2 -right-2 bg-[#CB333B] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
+                </div>
+                <div>
+                    <div id="cart-total" class="font-black text-lg md:text-xl text-[#CB333B]">0₺</div>
+                </div>
+            </div>
+            <button onclick="openCartModal()" class="bg-[#97D700] text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-black uppercase tracking-widest text-sm shadow-lg hover:bg-[#85bd00] transition active:scale-95">Sepete Git</button>
         </div>
     </div>
 
-    <!-- 4. ADMİN PANEL -->
-    <div id="page-admin" class="hidden min-h-screen bg-slate-900 text-white p-4 md:p-10">
-        <div class="max-w-3xl mx-auto">
-            <header class="flex justify-between items-center mb-8 border-b-2 border-[#97D700] pb-4">
-                <img src="https://www.oses.com.tr/assets/images/oses.png" style="height: 60px;">
-                <div class="text-right uppercase">
-                    <span class="block text-[10px] text-slate-500 font-bold tracking-widest uppercase">YUNUSELİ ŞUBE</span>
-                    <span class="oses-red font-black italic">ADMİN YÖNETİMİ</span>
-                </div>
-            </header>
-
-            <div class="bg-slate-800 p-6 rounded-[2rem] shadow-2xl mb-12 border border-slate-700">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-24 h-24 border-2 border-dashed border-slate-600 rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center">
-                            <img id="img-preview" src="https://www.oses.com.tr/assets/images/oses.png" class="max-w-full max-h-full object-contain">
-                        </div>
-                    </div>
-                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="hidden" id="edit-id" value="">
-                        <select id="f-cat" class="w-full p-3 bg-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#97D700]">
-                            <option value="çiğköfte">ÇİĞ KÖFTE</option>
-                            <option value="dürüm">DÜRÜM</option>
-                            <option value="tatlı">TATLI</option>
-                            <option value="içecek">İÇECEK</option>
-                            <option value="extra">EXTRA</option>
-                        </select>
-                        <input type="number" id="f-price" placeholder="Fiyat ₺" class="w-full p-3 bg-slate-700 rounded-xl outline-none">
-                        <input type="text" id="f-name" placeholder="Ürün Adı" class="w-full p-3 bg-slate-700 rounded-xl outline-none col-span-2">
-                        <input type="text" id="f-img" oninput="document.getElementById('img-preview').src = this.value || 'https://www.oses.com.tr/assets/images/oses.png'" placeholder="Resim URL" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl outline-none col-span-2">
-                        <textarea id="f-desc" rows="2" placeholder="Açıklama" class="w-full p-3 bg-slate-700 rounded-xl outline-none col-span-2"></textarea>
-                        <div class="col-span-2 flex gap-2">
-                            <button id="main-btn" onclick="saveProduct()" class="flex-1 oses-bg-red py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl">SİSTEME KAYDET</button>
-                            <button onclick="logout()" class="bg-slate-600 px-6 py-4 rounded-2xl font-bold uppercase text-xs">ÇIKIŞ</button>
-                        </div>
-                    </div>
-                </div>
+    <div id="cart-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex justify-center items-end md:items-center">
+        <div class="bg-white w-full md:w-[500px] h-[92dvh] md:h-auto md:max-h-[90vh] rounded-t-3xl md:rounded-3xl flex flex-col shadow-2xl relative transition-transform">
+            
+            <div class="flex justify-between items-center p-3 md:p-4 border-b border-gray-100 shrink-0">
+                <h3 class="font-black text-base md:text-lg uppercase tracking-tighter text-gray-800">Sipariş Sepeti</h3>
+                <button onclick="closeCartModal()" class="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-red-100 hover:text-red-600 transition font-bold text-xs uppercase tracking-widest">
+                    <span>Kapat</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            
+            <div class="flex-1 overflow-y-auto p-2 md:p-4 space-y-1.5 bg-gray-50/50" id="cart-items"></div>
+            
+            <div class="p-3 md:p-4 border-t border-gray-100 bg-white rounded-b-3xl shrink-0">
+                
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Tahmini Teslimat</span>
+                        <span id="delivery-time-display" class="font-black text-xs text-gray-800">Yükleniyor...</span>
+                    </div>
+                    <div id="busy-badge" class="hidden bg-red-100 text-red-600 px-2 py-1 rounded-md text-[9px] font-black border border-red-200 shadow-sm">
+                        ⚠️ YOĞUNLUK VAR
+                    </div>
+                </div>
 
-            <button onclick="copyFullCode()" class="w-full mb-8 bg-yellow-600 hover:bg-yellow-700 py-4 rounded-2xl font-black text-xs uppercase shadow-lg transition">Kodu Kopyala ve GitHub'a Yapıştır (Kalıcı Güncelleme)</button>
-            <div id="master-category-container" class="space-y-4"></div>
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Teslimat Adresi</label>
+                        <button type="button" id="location-btn" onclick="getLocation()" class="text-blue-600 bg-blue-50 px-2 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1 hover:bg-blue-100 transition active:scale-95">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Konum Bul
+                        </button>
+                    </div>
+
+                    <div class="relative mb-2">
+                        <input type="text" id="address-search" oninput="searchAddress(this.value)" autocomplete="off" placeholder="İl, İlçe, Sokak ara..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        <div id="address-suggestions" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-40 overflow-y-auto hidden top-full mt-1"></div>
+                    </div>
+
+                    <input type="text" id="address-detail" placeholder="Bina No, Kat vb. (Zorunlu)" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                </div>
+
+                <div class="mb-3">
+                    <textarea id="order-note" rows="1" placeholder="Sipariş notu ekle..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium resize-none"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-[9px] font-bold text-gray-400 uppercase mb-1.5 tracking-widest">Ödeme Yöntemi</label>
+                    <div id="payment-methods-container" class="flex gap-2 flex-wrap"></div>
+                </div>
+
+                <div class="flex justify-between items-center mb-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                    <span class="font-bold text-gray-600 uppercase text-xs tracking-widest">Toplam</span>
+                    <span id="modal-total" class="font-black text-lg text-[#CB333B]">0₺</span>
+                </div>
+                <button onclick="prepareOrder()" class="w-full bg-[#25D366] text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-green-200 hover:bg-[#20b858] transition flex justify-center items-center gap-2 text-sm">Siparişi Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="preview-modal" class="fixed inset-0 bg-black/60 z-[70] hidden flex justify-center items-center p-4">
+        <div class="bg-white w-full md:w-[500px] max-h-[90dvh] rounded-3xl flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 shrink-0">
+                <h3 class="font-black text-lg uppercase tracking-tighter text-gray-800">Sipariş Önizleme</h3>
+                <button onclick="closePreviewModal()" class="flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-2 rounded-xl hover:bg-red-100 hover:text-red-600 transition font-bold text-xs uppercase tracking-widest">
+                    <span>Geri</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 text-xs text-gray-700 whitespace-pre-wrap font-medium leading-relaxed bg-gray-50" id="preview-content"></div>
+            
+            <div class="p-4 border-t border-gray-100 bg-white rounded-b-3xl shrink-0">
+                <button onclick="confirmAndSend()" class="w-full bg-[#25D366] text-white py-3 md:py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-green-200 hover:bg-[#20b858] transition flex justify-center items-center gap-2 text-sm">
+                    Onayla ve Gönder
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- GÖMÜLÜ TAM ÜRÜN LİSTESİ ---
-        const defaultItems = [
-            {"id":"1778063004803","cat":"çiğköfte","name":"AİLE BOYU (1000 Gram)","price":"680","img":"https://www.oses.com.tr/photos/urunler/v1b1f-1kg.jpg","desc":"1000 gram çiğ köfte, 8 adet lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063055779","cat":"çiğköfte","name":"BÜYÜK PAKET (750 Gram)","price":"530","img":"https://www.oses.com.tr/photos/urunler/7wt2g-750g.jpg","desc":"750 gram çiğ köfte, 6 adet lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063122443","cat":"çiğköfte","name":"ORTA PAKET (500 Gram)","price":"370","img":"https://www.oses.com.tr/photos/urunler/d162x-500g.jpg","desc":"500 gram çiğ köfte, 4 adet lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063176428","cat":"çiğköfte","name":"KÜÇÜK PAKET (300 Gram)","price":"230","img":"https://www.oses.com.tr/photos/urunler/1mszw-250g.jpg","desc":"300 gram çiğ köfte, 2 adet lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063423982","cat":"dürüm","name":"DÜRÜM","price":"110","img":"https://www.oses.com.tr/photos/urunler/p4u11-durum.jpg","desc":"100 gram çiğ köfte, lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063534718","cat":"dürüm","name":"MEGA DÜRÜM","price":"150","img":"https://www.oses.com.tr/photos/urunler/qm266-mega-durum.jpg","desc":"150 gram çiğ köfte, lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063556279","cat":"dürüm","name":"DORİTOSLU DÜRÜM","price":"130","img":"https://www.oses.com.tr/photos/urunler/392ht-doritos.jpg","desc":"100 gram çiğ köfte,doritos, lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063575143","cat":"dürüm","name":"DORİTOSLU MEGA DÜRÜM","price":"170","img":"https://www.oses.com.tr/photos/urunler/4ay3u-oses-doritoslu-megadurum.jpg","desc":"150 gram çiğ köfte,doritos, lavaş, yeşillik, çiğ köfte sos, acı sos"},
-            {"id":"1778063902858","cat":"içecek","name":"KÜÇÜK AYRAN (170 mL)","price":"30","img":"https://www.oses.com.tr/photos/urunler/8mxeb-kucuk-ayran.jpg","desc":"Ayran Küçük"},
-            {"id":"1778063920002","cat":"içecek","name":"BÜYÜK AYRAN (295 mL)","price":"40","img":"https://www.oses.com.tr/photos/urunler/47xpe-buyuk-ayran.jpg","desc":"Ayran Büyük"},
-            {"id":"1778063932074","cat":"içecek","name":"LİTRELİK AYRAN (1 L)","price":"80","img":"https://www.oses.com.tr/photos/urunler/s239x-ayran-1lt.jpg","desc":"Ayran 1 lt"},
-            {"id":"1778063965699","cat":"içecek","name":"KUTU KOLA","price":"60","img":"https://www.oses.com.tr/photos/urunler/se8pt-kutu-kola.jpg","desc":"KUTU KOLA"},
-            {"id":"1778063984739","cat":"içecek","name":"KUTU FANTA","price":"60","img":"https://www.oses.com.tr/photos/urunler/zsx3r-kutu-fanta.jpg","desc":"KUTU FANTA"},
-            {"id":"1778064000314","cat":"içecek","name":"COCA COLA (1 L)","price":"80","img":"https://www.oses.com.tr/photos/urunler/kae43-kola-1lt.jpg","desc":"Coca Cola 1lt"},
-            {"id":"1778064223157","cat":"içecek","name":"KÜÇÜK ŞALGAM ACISIZ (300 mL)","price":"40","img":"https://www.oses.com.tr/photos/urunler/k78a8-oses-salgam-kucuk.jpg","desc":"Şalgam 300ml"},
-            {"id":"1778064241405","cat":"içecek","name":"KÜÇÜK ŞALGAM ACILI (300 ml)","price":"40","img":"https://www.oses.com.tr/photos/urunler/v3xqf-salgam-kucuk.jpg","desc":"KÜÇÜK ŞALGAM ACILI (300 ml)"},
-            {"id":"1778064254982","cat":"içecek","name":"BÜYÜK ŞALGAM ACISIZ (1 L)","price":"80","img":"https://www.oses.com.tr/photos/urunler/wcks2-oses-salgam-buyuk.jpg","desc":"Şalgam 1lt"},
-            {"id":"1778064269446","cat":"içecek","name":"BÜYÜK ŞALGAM ACILI (1 L)","price":"80","img":"https://www.oses.com.tr/photos/urunler/wc9g4-salgam-1lt.jpg","desc":"BÜYÜK ŞALGAM ACILI (1 L)"},
-            {"id":"1778064284854","cat":"içecek","name":"SODA","price":"25","img":"https://www.oses.com.tr/photos/urunler/6rw4m-soda.jpg","desc":"Soda"},
-            {"id":"1778064297238","cat":"içecek","name":"SU","price":"20","img":"https://www.oses.com.tr/photos/urunler/ty9hy-su.jpg","desc":"Su"},
-            {"id":"1778064352159","cat":"extra","name":"PAKET LAVAŞ (2 adet)","price":"15","img":"https://www.oses.com.tr/photos/urunler/bv7c3-lavas.jpg","desc":"Paket Lavaş (2 Adet)"}
-        ];
-
-        let items = JSON.parse(localStorage.getItem('osesMenu')) || defaultItems;
+        const DB_URL = "https://oses-yunuseli-default-rtdb.firebaseio.com/oses.json";
         let currentCategory = 'all';
-        const catOrder = ["çiğköfte", "dürüm", "tatlı", "içecek", "extra"];
-        const catNames = {"çiğköfte": "ÇİĞ KÖFTELER", "dürüm": "DÜRÜMLER", "tatlı": "TATLILAR", "içecek": "İÇECEKLER", "extra": "EKSTRALAR"};
+        let items = [];
+        let categories = [];
+        let paymentMethods = [{name: "Kapıda Nakit", active: true}, {name: "Kapıda Kredi Kartı", active: true}];
+        let deliverySettings = { time: "30-45 Dk", isBusy: false };
+        let cart = JSON.parse(localStorage.getItem('oses_cart')) || [];
+        let finalOrderMessage = "";
 
-        // MENÜ FONKSİYONLARI
+        document.getElementById('cart-modal').addEventListener('click', function(e) { if (e.target === this) closeCartModal(); });
+        document.getElementById('preview-modal').addEventListener('click', function(e) { if (e.target === this) closePreviewModal(); });
+
+        window.addEventListener('pageshow', (event) => {
+            cart = JSON.parse(localStorage.getItem('oses_cart')) || [];
+            updateCartUI();
+            if(items.length > 0) renderMenu();
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch(DB_URL);
+                const data = await res.json();
+                if(data) {
+                    items = data.items || [];
+                    if(data.categories) {
+                        categories = data.categories;
+                    } else if(data.catOrder) { 
+                        const oldNames = {"çiğköfte": "ÇİĞ KÖFTELER", "dürüm": "DÜRÜMLER", "tatlı": "TATLILAR", "içecek": "İÇECEKLER", "extra": "EKSTRALAR", "kampanya": "KAMPANYALAR"};
+                        categories = data.catOrder.map(id => ({ id: id, name: oldNames[id] || id.toUpperCase() }));
+                    } else {
+                        categories = [{id: "çiğköfte", name: "ÇİĞ KÖFTELER"}];
+                    }
+                    if(data.paymentMethods) paymentMethods = data.paymentMethods;
+                    if(data.deliverySettings) deliverySettings = data.deliverySettings;
+                }
+                
+                renderCategoryBar();
+                renderPaymentMethods();
+                renderDeliveryInfo();
+                renderMenu();
+                updateCartUI();
+            } catch(e) { console.error("Veri yüklenemedi:", e); }
+        }
+
+        function renderCategoryBar() {
+            const bar = document.getElementById('category-bar');
+            bar.innerHTML = `<button onclick="filterCategory('all')" class="nav-link snap-start flex-shrink-0 py-1.5 px-4 text-[11px] md:text-sm active">Tümü</button>`;
+            categories.forEach(cat => {
+                bar.innerHTML += `<button onclick="filterCategory('${cat.id}')" class="nav-link snap-start flex-shrink-0 py-1.5 px-4 text-[11px] md:text-sm">${cat.name}</button>`;
+            });
+        }
+
+        function renderPaymentMethods() {
+            const container = document.getElementById('payment-methods-container');
+            container.innerHTML = '';
+            const activeMethods = paymentMethods.filter(p => p.active);
+            
+            if(activeMethods.length === 0) {
+                container.innerHTML = `<span class="text-xs text-red-500 font-bold">Ödeme yöntemi bulunamadı!</span>`;
+                return;
+            }
+
+            activeMethods.forEach((method, idx) => {
+                container.innerHTML += `
+                    <label class="flex-1 cursor-pointer min-w-[100px]">
+                        <input type="radio" name="payment" value="${method.name}" class="hidden payment-radio" ${idx === 0 ? 'checked' : ''}>
+                        <div class="border border-gray-200 rounded-lg p-1.5 text-center transition-colors font-black text-gray-500 text-[10px] md:text-xs bg-white">
+                            ${method.name}
+                        </div>
+                    </label>
+                `;
+            });
+        }
+
+        function renderDeliveryInfo() {
+            const timeEl = document.getElementById('delivery-time-display');
+            const badgeEl = document.getElementById('busy-badge');
+            
+            if(timeEl) timeEl.innerText = deliverySettings.time ? deliverySettings.time : "Belirtilmedi";
+            
+            if(badgeEl) {
+                if(deliverySettings.isBusy) badgeEl.classList.remove('hidden');
+                else badgeEl.classList.add('hidden');
+            }
+        }
+
         function renderMenu() {
             const container = document.getElementById('menu-container');
             container.innerHTML = '';
-            let displayItems = currentCategory === 'all' ? items : items.filter(i => i.cat === currentCategory);
+            let displayItems = [];
+            if (currentCategory === 'all') {
+                categories.forEach(cat => { displayItems = [...displayItems, ...items.filter(it => it.cat === cat.id)]; });
+            } else {
+                displayItems = items.filter(i => i.cat === currentCategory);
+            }
             
             displayItems.forEach((item) => {
-                container.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform p-4" onclick="showDetail(${items.indexOf(item)})">
-                        <div class="img-box"><img src="${item.img || 'https://www.oses.com.tr/assets/images/oses.png'}" onerror="this.src='https://www.oses.com.tr/assets/images/oses.png'"></div>
-                        <div class="mt-6 text-center">
-                            <h3 class="text-sm font-bold text-[#4c7c00] uppercase mb-1 min-h-[32px]">${item.name}</h3>
-                            <p class="text-[10px] text-gray-400 line-clamp-2 mb-3 h-8">${item.desc || ''}</p>
-                            <div class="text-xl font-black oses-red">₺${item.price},00</div>
+                const safeName = item.name.replace(/'/g, "\\'");
+                const cartItemId = item.id + '_default';
+                const cartItem = cart.find(c => c.cartItemId === cartItemId);
+                const qty = cartItem ? cartItem.qty : 0;
+
+                let badgeHtml = '';
+                let priceHtml = `<div class="text-[11px] md:text-base font-black oses-red mt-0.5">₺${item.price},00</div>`;
+
+                if(item.discountPercent && item.oldPrice) {
+                    badgeHtml = `<div class="absolute top-1 right-1 bg-[#CB333B] text-white text-[7px] md:text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm z-10">%${item.discountPercent} İNDİRİM</div>`;
+                    priceHtml = `
+                        <div class="flex flex-col items-center justify-center leading-none mt-0.5">
+                            <span class="text-[8px] md:text-xs text-gray-400 line-through mb-[1px]">₺${item.oldPrice},00</span>
+                            <span class="text-[11px] md:text-base font-black oses-red">₺${item.price},00</span>
                         </div>
+                    `;
+                }
+
+                let descHtml = item.desc ? `<p class="text-[7px] md:text-[10px] text-gray-500 leading-tight mb-1 line-clamp-2 px-1">${item.desc}</p>` : '';
+                const hasOptions = !!(item.removables || item.extras);
+                let actionArea = '';
+
+                if(hasOptions) {
+                    actionArea = `<button onclick="event.stopPropagation(); location.href='detay.html?id=${item.id}'" class="mt-2 w-full bg-yellow-500 text-white py-1 md:py-2 rounded-lg font-bold uppercase tracking-widest text-[8px] md:text-[10px] hover:bg-yellow-600 transition active:scale-95 shadow-sm">SEÇ</button>`;
+                } else {
+                    if(qty > 0) {
+                        actionArea = `
+                            <div class="mt-2 flex items-center justify-between bg-gray-100 rounded-lg overflow-hidden" onclick="event.stopPropagation()">
+                                <button onclick="updateQty('${cartItemId}', -1)" class="w-1/3 py-1 md:py-1.5 bg-red-500 text-white font-black text-[10px] md:text-xs">-</button>
+                                <span class="w-1/3 text-center font-black text-gray-800 text-[10px] md:text-xs">${qty}</span>
+                                <button onclick="updateQty('${cartItemId}', 1)" class="w-1/3 py-1 md:py-1.5 bg-green-500 text-white font-black text-[10px] md:text-xs">+</button>
+                            </div>
+                        `;
+                    } else {
+                        actionArea = `<button onclick="event.stopPropagation(); addToCartSimple('${item.id}', '${safeName}', ${item.price})" class="mt-2 w-full bg-[#97D700] text-white py-1 md:py-2 rounded-lg font-bold uppercase tracking-widest text-[8px] md:text-[10px] hover:bg-[#85bd00] transition active:scale-95 shadow-sm">Ekle</button>`;
+                    }
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-shadow p-1.5 md:p-3 flex flex-col justify-between h-full relative" onclick="location.href='detay.html?id=${item.id}'">
+                        ${badgeHtml}
+                        <div class="flex flex-col flex-1">
+                            <div class="img-box rounded-lg overflow-hidden relative"><img src="${item.img || 'https://www.oses.com.tr/assets/images/oses.png'}" onerror="this.src='https://www.oses.com.tr/assets/images/oses.png'"></div>
+                            <div class="mt-1 md:mt-2 text-center flex flex-col items-center justify-center flex-1">
+                                <h3 class="text-[8px] md:text-[13px] font-bold text-[#4c7c00] uppercase mb-0.5 min-h-[24px] flex items-center justify-center leading-tight">${item.name}</h3>
+                                ${descHtml}
+                                ${priceHtml}
+                            </div>
+                        </div>
+                        ${actionArea}
                     </div>`;
             });
         }
 
-        function filterCategory(cat) {
-            currentCategory = cat;
-            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(cat)));
+        function addToCartSimple(id, name, price) {
+            const cartItemId = id + '_default';
+            cart.push({cartItemId: cartItemId, id: id, name: name, price: Number(price), qty: 1, ingredients: [], added: []});
+            saveCart();
+        }
+
+        function updateQty(cartItemId, change) {
+            const idx = cart.findIndex(c => c.cartItemId === cartItemId);
+            if(idx > -1) {
+                cart[idx].qty += change;
+                if(cart[idx].qty <= 0) cart.splice(idx, 1);
+            }
+            saveCart();
+        }
+
+        function saveCart() {
+            localStorage.setItem('oses_cart', JSON.stringify(cart));
+            updateCartUI();
             renderMenu();
         }
 
-        function showDetail(idx) {
-            const it = items[idx];
-            document.getElementById('page-menu').classList.add('hidden');
-            document.getElementById('page-detail').classList.remove('hidden');
-            document.getElementById('detail-content').innerHTML = `
-                <div class="relative bg-white h-[400px] flex items-center justify-center p-10"><img src="${it.img}" class="max-h-full object-contain"><button onclick="hideDetail()" class="absolute top-6 left-6 bg-white shadow-md p-3 rounded-full text-[#97D700]">← Geri</button></div>
-                <div class="p-8 bg-white"><h1 class="text-2xl font-black text-[#4c7c00] uppercase mb-2">${it.name}</h1><div class="text-3xl font-black text-[#CB333B] mb-6">₺${it.price},00</div>
-                <div class="border-t pt-6"><h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Açıklama</h2><p class="text-gray-600 leading-relaxed text-lg">${it.desc || 'Açıklama mevcut değil.'}</p></div>
-                <button onclick="hideDetail()" class="w-full oses-bg-red text-white py-4 rounded-lg font-bold text-lg mt-12 uppercase shadow-xl transition active:scale-95">Listeye Dön</button></div>`;
-            window.scrollTo(0,0);
+        function updateCartUI() {
+            const count = cart.reduce((acc, c) => acc + c.qty, 0);
+            const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
+            const cartBar = document.getElementById('cart-bar');
+            if(count > 0) {
+                cartBar.classList.remove('hidden');
+                document.getElementById('cart-count-badge').innerText = count;
+                document.getElementById('cart-total').innerText = total + '₺';
+            } else {
+                cartBar.classList.add('hidden');
+                closeCartModal();
+            }
+            renderCartModal();
         }
 
-        function hideDetail() { document.getElementById('page-detail').classList.add('hidden'); document.getElementById('page-menu').classList.remove('hidden'); }
-
-        // ADMİN PANEL FONKSİYONLARI
-        function showLogin() { document.getElementById('page-menu').classList.add('hidden'); document.getElementById('page-login').classList.remove('hidden'); }
-        function hideLogin() { document.getElementById('page-login').classList.add('hidden'); document.getElementById('page-menu').classList.remove('hidden'); }
-        function login() { if(document.getElementById('admin-pass').value === "sinansümeyye2026") { document.getElementById('page-login').classList.add('hidden'); document.getElementById('page-admin').classList.remove('hidden'); renderAdmin(); } else { alert("Şifre Yanlış!"); } }
-        function logout() { location.reload(); }
-
-        function renderAdmin() {
-            const container = document.getElementById('master-category-container');
-            container.innerHTML = '';
-            catOrder.forEach(catKey => {
-                const catItems = items.filter(it => it.cat === catKey);
-                const section = document.createElement('div');
-                section.className = "bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden mb-4 shadow-lg";
-                section.innerHTML = `
-                    <div class="flex justify-between items-center p-5 cursor-pointer" onclick="toggleCategory('${catKey}')">
-                        <h3 class="font-black text-sm uppercase italic">${catNames[catKey]} (${catItems.length})</h3>
-                        <div class="flex gap-4 items-center">
-                            <button onclick="event.stopPropagation(); toggleSelectAll('${catKey}')" class="text-[10px] font-bold text-blue-400">SEÇ</button>
-                            <button onclick="event.stopPropagation(); deleteSelected('${catKey}')" class="text-[10px] font-bold text-red-500">SİL</button>
-                        </div>
+        function renderCartModal() {
+            const list = document.getElementById('cart-items');
+            list.innerHTML = '';
+            cart.forEach(c => {
+                let optionsHtml = '';
+                if(c.ingredients && c.ingredients.length > 0) optionsHtml += `<div class="text-[9px] text-gray-500 leading-tight truncate">🥬 ${c.ingredients.join(', ')}</div>`;
+                if(c.added && c.added.length > 0) optionsHtml += `<div class="text-[9px] text-green-600 leading-tight truncate">➕ ${c.added.map(a => a.name).join(', ')}</div>`;
+                if(c.removed && c.removed.length > 0) optionsHtml += `<div class="text-[9px] text-red-500 leading-tight truncate">❌ ${c.removed.join(', ')}</div>`;
+                
+                list.innerHTML += `
+                <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+                    <div class="flex-1 pr-2 overflow-hidden">
+                        <div class="text-[11px] font-black text-gray-800 leading-tight truncate">${c.name}</div>
+                        ${optionsHtml}
                     </div>
-                    <div id="content-${catKey}" class="category-content collapsed bg-slate-900/20 px-5 pb-5">
-                        <div id="list-${catKey}" class="space-y-2 pt-4">
-                            ${catItems.map(it => `<div class="flex justify-between items-center bg-slate-800 p-3 rounded-2xl border border-slate-700"><div class="flex items-center gap-4"><input type="checkbox" data-cat="${catKey}" value="${it.id}" class="checkbox-custom"><img src="${it.img}" class="w-10 h-10 rounded-lg object-cover"><div class="text-[11px] font-bold uppercase">${it.name} - ${it.price}₺</div></div><button onclick="editProduct('${it.id}')" class="text-blue-400 font-bold text-[10px]">DÜZENLE</button></div>`).join('')}
+                    <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex items-center bg-gray-100 rounded border border-gray-200">
+                            <button onclick="updateQty('${c.cartItemId}', -1)" class="px-2 py-0.5 text-red-500 font-black text-xs active:bg-red-100">-</button>
+                            <span class="px-1 text-[11px] font-black text-gray-800 min-w-[16px] text-center">${c.qty}</span>
+                            <button onclick="updateQty('${c.cartItemId}', 1)" class="px-2 py-0.5 text-green-500 font-black text-xs active:bg-green-100">+</button>
                         </div>
-                    </div>`;
-                container.appendChild(section);
+                        <div class="font-black text-[12px] text-[#CB333B] min-w-[35px] text-right">${c.price * c.qty}₺</div>
+                    </div>
+                </div>`;
             });
+            const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
+            document.getElementById('modal-total').innerText = total + '₺';
         }
 
-        function toggleCategory(catKey) { document.getElementById(`content-${catKey}`).classList.toggle('collapsed'); }
-
-        function saveProduct() {
-            const editId = document.getElementById('edit-id').value;
-            const newItem = { id: editId || Date.now().toString(), cat: document.getElementById('f-cat').value, name: document.getElementById('f-name').value, price: document.getElementById('f-price').value, img: document.getElementById('f-img').value, desc: document.getElementById('f-desc').value };
-            if(editId) items = items.map(it => it.id === editId ? newItem : it); else items.push(newItem);
-            localStorage.setItem('osesMenu', JSON.stringify(items));
-            renderAdmin();
-            alert("Ürün tarayıcıya kaydedildi. Kalıcı olması için Kodu Kopyala yapıp GitHub'a yapıştırın!");
+        let searchTimeout;
+        async function searchAddress(query) {
+            const suggBox = document.getElementById('address-suggestions');
+            if(query.length < 3) {
+                suggBox.classList.add('hidden');
+                return;
+            }
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=tr&addressdetails=1&limit=5&viewbox=28.9,40.3,29.2,40.1`);
+                    const data = await res.json();
+                    suggBox.innerHTML = '';
+                    
+                    if(data.length > 0) {
+                        data.forEach(place => {
+                            const div = document.createElement('div');
+                            div.className = "p-2 hover:bg-gray-100 cursor-pointer text-xs text-gray-700 border-b border-gray-100 last:border-0";
+                            div.innerText = place.display_name;
+                            div.onclick = () => {
+                                document.getElementById('address-search').value = formatAddress(place.address);
+                                suggBox.classList.add('hidden');
+                            };
+                            suggBox.appendChild(div);
+                        });
+                        suggBox.classList.remove('hidden');
+                    } else {
+                        suggBox.classList.add('hidden');
+                    }
+                } catch(e) { console.error("Adres arama hatası:", e); }
+            }, 600);
         }
 
-        function editProduct(id) {
-            const it = items.find(x => x.id === id);
-            document.getElementById('edit-id').value = id;
-            document.getElementById('f-cat').value = it.cat;
-            document.getElementById('f-name').value = it.name;
-            document.getElementById('f-price').value = it.price;
-            document.getElementById('f-img').value = it.img;
-            document.getElementById('f-desc').value = it.desc;
-            document.getElementById('img-preview').src = it.img;
-            document.getElementById('main-btn').innerText = "GÜNCELLE";
-            window.scrollTo(0,0);
+        function formatAddress(addr) {
+            let parts = [];
+            if(addr.province || addr.city || addr.town) parts.push(addr.province || addr.city || addr.town);
+            if(addr.county || addr.district) parts.push(addr.county || addr.district);
+            if(addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+            if(addr.road || addr.pedestrian) parts.push(addr.road || addr.pedestrian);
+            return parts.join(', ');
         }
 
-        function deleteSelected(catKey) {
-            const sel = Array.from(document.querySelectorAll(`input[type="checkbox"][data-cat="${catKey}"]:checked`)).map(c => c.value);
-            if(confirm("Siliniyor?")) { items = items.filter(it => !sel.includes(it.id)); localStorage.setItem('osesMenu', JSON.stringify(items)); renderAdmin(); }
+        function getLocation() {
+            const btn = document.getElementById('location-btn');
+            btn.innerHTML = '⏳ Bulunuyor...';
+            btn.classList.add('opacity-70', 'pointer-events-none');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
+                        const data = await res.json();
+                        
+                        if(data && data.address) {
+                            document.getElementById('address-search').value = formatAddress(data.address);
+                        }
+                    } catch(e) {
+                        alert("Konum bilgisi alınırken bir ağ hatası oluştu.");
+                    } finally {
+                        resetLocationBtn(btn);
+                    }
+                }, (error) => {
+                    if (error.code === error.PERMISSION_DENIED) {
+                        alert("Lütfen tarayıcı ayarlarından konum izni verin.");
+                    } else {
+                        alert("Konum şu anda bulunamıyor.");
+                    }
+                    resetLocationBtn(btn);
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            } else {
+                alert("Tarayıcınız konum servisini desteklemiyor.");
+                resetLocationBtn(btn);
+            }
         }
 
-        function toggleSelectAll(catKey) {
-            const cbs = document.querySelectorAll(`input[type="checkbox"][data-cat="${catKey}"]`);
-            const all = Array.from(cbs).every(c => c.checked);
-            cbs.forEach(c => c.checked = !all);
+        function resetLocationBtn(btn) {
+            btn.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Konum Bul`;
+            btn.classList.remove('opacity-70', 'pointer-events-none');
         }
 
-        function copyFullCode() {
-            const updatedCode = document.documentElement.outerHTML.replace(/const defaultItems = \[[\s\S]*?\];/, `const defaultItems = ${JSON.stringify(items)};`);
-            navigator.clipboard.writeText(updatedCode).then(() => alert("KOD KOPYALANDI!\n\nŞimdi GitHub'da index.html'e girin, her şeyi silip bunu yapıştırın ve kaydedin. Artık tüm müşteriler güncel menüyü görecek."));
+        function prepareOrder() {
+            const mainAddress = document.getElementById('address-search').value.trim();
+            const detailAddress = document.getElementById('address-detail').value.trim();
+            const orderNote = document.getElementById('order-note').value.trim();
+            
+            if(!mainAddress || !detailAddress) return alert('Lütfen adresinizi ve bina/kat detayı bilgilerinizi tam giriniz!');
+            
+            const paymentRadio = document.querySelector('input[name="payment"]:checked');
+            if(!paymentRadio) return alert("Lütfen bir ödeme yöntemi seçiniz!");
+            const paymentMethod = paymentRadio.value;
+            
+            let message = "📦 *YENİ SİPARİŞ VAR!*\n\n";
+            cart.forEach(c => {
+                message += `▪️ *${c.qty}x ${c.name}* - ${c.price * c.qty}₺\n`;
+                if(c.ingredients && c.ingredients.length > 0) message += `   🥬 Malzemeler: ${c.ingredients.join(', ')}\n`;
+                if(c.added && c.added.length > 0) message += `   ➕ Ekstra: ${c.added.map(a => a.name).join(', ')}\n`;
+                if(c.removed && c.removed.length > 0) message += `   ❌ Çıkar: ${c.removed.join(', ')}\n`;
+                message += "\n";
+            });
+            
+            const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
+            message += `💰 *GENEL TOPLAM:* ${total}₺\n💳 *ÖDEME YÖNTEMİ:* ${paymentMethod}\n\n📍 *ADRES:*\n${mainAddress}\nDetay: ${detailAddress}`;
+            
+            if(orderNote) {
+                message += `\n\n📝 *SİPARİŞ NOTU:*\n${orderNote}`;
+            }
+
+            finalOrderMessage = message;
+            
+            let previewHTML = message.replace(/\*(.*?)\*/g, '<strong class="text-gray-900">$1</strong>');
+            document.getElementById('preview-content').innerHTML = previewHTML;
+
+            document.getElementById('preview-modal').classList.remove('hidden');
         }
 
-        window.onload = renderMenu;
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+
+        function confirmAndSend() {
+            window.open(`https://wa.me/905412201665?text=${encodeURIComponent(finalOrderMessage)}`, '_blank');
+            closePreviewModal();
+        }
+
+        function openCartModal() { document.getElementById('cart-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+        function closeCartModal() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+        function filterCategory(cat) { currentCategory = cat; document.querySelectorAll('.nav-link').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(cat))); renderMenu(); }
+        window.onload = loadData;
     </script>
 </body>
 </html>

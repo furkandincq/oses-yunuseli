@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oses Admin Girişi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-6 font-sans">
+    <div class="bg-slate-800 p-8 rounded-[2rem] shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="text-center mb-8">
+            <img src="https://www.oses.com.tr/assets/images/oses.png" class="h-20 mx-auto mb-4">
+            <h2 class="text-[#97D700] font-black text-2xl italic uppercase">Yönetici Girişi</h2>
+            <p class="text-slate-400 text-xs mt-2 uppercase tracking-widest">Yunuseli Şube</p>
+        </div>
+        <div class="space-y-4">
+            <input type="password" id="passInput" placeholder="Panel Şifresini Giriniz" class="w-full p-4 bg-slate-900 text-white border border-slate-600 rounded-2xl outline-none focus:ring-2 focus:ring-[#CB333B] text-center tracking-widest">
+            <button onclick="login()" class="w-full bg-[#CB333B] text-white py-4 rounded-2xl font-black tracking-widest shadow-xl hover:bg-red-700 transition uppercase">Giriş Yap</button>
+            <button onclick="location.href='index.html'" class="w-full text-slate-500 font-bold text-xs uppercase mt-2 hover:text-white transition">Menüye Dön</button>
+        </div>
+    </div>
+    <script>
+        const DB_URL = "https://oses-yunuseli-default-rtdb.firebaseio.com/oses.json";
+        document.getElementById("passInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                login();
+            }
+        });
+        async function login() {
+            const input = document.getElementById('passInput').value;
+            if(!input) return alert("Lütfen şifre giriniz!");
+            try {
+                const res = await fetch(DB_URL);
+                const data = await res.json();
+                const correctPass = (data && data.adminPass) ? data.adminPass : "oses16";
+                if(input === correctPass) {
+                    sessionStorage.setItem('oses_auth', 'true');
+                    window.location.href = 'panel.html';
+                } else {
+                    alert("Hatalı şifre girdiniz!");
+                    document.getElementById('passInput').value = '';
+                }
+            } catch(e) {
+                alert("Bağlantı hatası! Lütfen internetinizi kontrol edin.");
+            }
+        }
+    </script>
+</body>
+</html>
