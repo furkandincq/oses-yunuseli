@@ -101,19 +101,24 @@
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm relative">
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Teslimat Adresi</label>
-                        <button type="button" id="location-btn" onclick="getLocation()" class="text-blue-600 bg-blue-50 px-2 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1 hover:bg-blue-100 transition active:scale-95">
+                        <button type="button" id="location-btn" onclick="getLocationPrecise()" class="text-blue-600 bg-blue-50 px-2 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1 hover:bg-blue-100 transition active:scale-95">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Konumu Bul
                         </button>
                     </div>
 
                     <div id="distance-info" class="text-[10px] font-bold text-blue-600 mb-2 hidden bg-blue-50 p-1.5 rounded text-center"></div>
 
-                    <div class="relative mb-2">
-                        <input type="text" id="address-search" oninput="searchAddress(this.value)" autocomplete="off" placeholder="İl, İlçe, Sokak ara..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
-                        <div id="address-suggestions" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-40 overflow-y-auto hidden top-full mt-1"></div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" id="addr-il" placeholder="İl" value="Bursa" onblur="geocodeAddress()" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        <input type="text" id="addr-ilce" placeholder="İlçe" onblur="geocodeAddress()" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        <input type="text" id="addr-mah" placeholder="Mahalle" onblur="geocodeAddress()" class="col-span-2 p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        <input type="text" id="addr-sokak" placeholder="Sokak / Cadde" onblur="geocodeAddress()" class="col-span-2 p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        <div class="col-span-2 grid grid-cols-3 gap-2">
+                            <input type="text" id="addr-no" placeholder="Bina No" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                            <input type="text" id="addr-kat" placeholder="Kat" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                            <input type="text" id="addr-daire" placeholder="Daire" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
+                        </div>
                     </div>
-
-                    <input type="text" id="address-detail" placeholder="Bina No, Kat vb. (Zorunlu)" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#97D700] text-xs font-medium">
                 </div>
 
                 <div class="mb-3">
@@ -162,9 +167,9 @@
         let cart = JSON.parse(localStorage.getItem('oses_cart')) || [];
         let finalOrderMessage = "";
 
-        // Mesafe Sistemi Değişkenleri
         let distanceSettings = [];
-        let shopCoords = { lat: 40.2333, lon: 28.9833 }; 
+        // İşletme konumu panel ile uyumlu olarak sabitlendi.
+        let shopCoords = { lat: 40.2468417, lon: 29.0153394 }; 
         let userDistanceKm = null; 
 
         document.getElementById('cart-modal').addEventListener('click', function(e) { if (e.target === this) closeCartModal(); });
@@ -185,14 +190,6 @@
             return R * c;
         }
 
-        function autoGetLocation() {
-            if (navigator.geolocation && !document.getElementById('address-search').value) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    handlePositionFound(position);
-                }, (error) => { console.log("Otomatik konum reddedildi veya bulunamadı."); });
-            }
-        }
-
         async function loadData() {
             try {
                 const res = await fetch(DB_URL);
@@ -205,7 +202,7 @@
                     if(data.paymentMethods) paymentMethods = data.paymentMethods;
                     if(data.deliverySettings) deliverySettings = data.deliverySettings;
                     if(data.distanceSettings) distanceSettings = data.distanceSettings;
-                    if(data.shopCoords) shopCoords = data.shopCoords;
+                    // İşletme koordinatlarını DB'den almak yerine yukardaki sabit değeri kullanıyoruz.
                 }
                 renderCategoryBar();
                 renderPaymentMethods();
@@ -213,6 +210,31 @@
                 renderMenu();
                 updateCartUI();
             } catch(e) { console.error("Veri yüklenemedi:", e); }
+        }
+
+        // Girilen adresten uzaklık hesaplama (Kullanıcı alanları doldurup çıktığında çalışır)
+        async function geocodeAddress() {
+            const il = document.getElementById('addr-il').value.trim();
+            const ilce = document.getElementById('addr-ilce').value.trim();
+            const mah = document.getElementById('addr-mah').value.trim();
+            const sokak = document.getElementById('addr-sokak').value.trim();
+
+            if (il && ilce && mah) {
+                const query = `${mah} ${sokak} ${ilce} ${il}`;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=tr&limit=1`);
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        userDistanceKm = calculateDistance(shopCoords.lat, shopCoords.lon, lat, lon);
+                        const distInfo = document.getElementById('distance-info');
+                        distInfo.innerText = `📍 İşletmeye Uzaklığınız: ${userDistanceKm.toFixed(1)} km`;
+                        distInfo.classList.remove('hidden');
+                        updateMinCartDisplay();
+                    }
+                } catch(e) { console.log("Adres koordinatları bulunamadı"); }
+            }
         }
 
         async function handlePositionFound(position) {
@@ -226,28 +248,35 @@
 
             updateMinCartDisplay();
 
+            // Koordinatlardan adres bilgilerini çekip kutuları otomatik doldur
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
                 const data = await res.json();
-                if(data && data.address && !document.getElementById('address-search').value) {
-                    document.getElementById('address-search').value = formatAddress(data.address);
+                if(data && data.address) {
+                    const ad = data.address;
+                    document.getElementById('addr-il').value = ad.province || ad.city || ad.state || '';
+                    document.getElementById('addr-ilce').value = ad.town || ad.county || ad.district || '';
+                    document.getElementById('addr-mah').value = ad.suburb || ad.neighbourhood || ad.village || '';
+                    document.getElementById('addr-sokak').value = ad.road || ad.pedestrian || '';
+                    document.getElementById('addr-no').value = ad.house_number || '';
                 }
             } catch(e) { console.log("Adres metne çevrilemedi"); }
         }
 
-        function getLocation() {
+        function getLocationPrecise() {
             const btn = document.getElementById('location-btn');
             btn.innerHTML = '⏳ Bulunuyor...';
             btn.classList.add('opacity-70', 'pointer-events-none');
 
             if (navigator.geolocation) {
+                // enableHighAccuracy: true ve maximumAge: 0 ile çok hassas konum elde edilir
                 navigator.geolocation.getCurrentPosition((position) => {
                     handlePositionFound(position);
                     resetLocationBtn(btn);
                 }, (error) => {
                     alert("Konum izni verilmedi veya bulunamıyor. Lütfen cihaz ayarlarınızı kontrol edin.");
                     resetLocationBtn(btn);
-                }, { enableHighAccuracy: true, timeout: 10000 });
+                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
             } else {
                 alert("Tarayıcınız konum servisini desteklemiyor.");
                 resetLocationBtn(btn);
@@ -259,14 +288,13 @@
             btn.classList.remove('opacity-70', 'pointer-events-none');
         }
 
-        // YENİ: Sepet barında minimum sipariş durumunu gösteren fonksiyon
         function updateMinCartDisplay() {
             const warningEl = document.getElementById('min-cart-warning');
             if (!warningEl) return;
 
             if (distanceSettings && distanceSettings.length > 0) {
                 if (userDistanceKm === null) {
-                    warningEl.innerHTML = `<span class="text-gray-400 text-[8px] md:text-[9px]">MİN. TUTAR İÇİN</span><br><span class="text-gray-500">KONUM BEKLENİYOR</span>`;
+                    warningEl.innerHTML = `<span class="text-gray-400 text-[8px] md:text-[9px]">MİN. TUTAR İÇİN</span><br><span class="text-gray-500">ADRES BEKLENİYOR</span>`;
                     warningEl.classList.remove('hidden', 'text-red-500', 'text-green-600');
                 } else {
                     let sortedSettings = [...distanceSettings].sort((a,b) => a.maxKm - b.maxKm);
@@ -424,7 +452,7 @@
                 closeCartModal();
             }
             renderCartModal();
-            updateMinCartDisplay(); // Sepet güncellendiğinde min tutarı tekrar kontrol et
+            updateMinCartDisplay(); 
         }
 
         function renderCartModal() {
@@ -456,48 +484,20 @@
             document.getElementById('modal-total').innerText = total + '₺';
         }
 
-        let searchTimeout;
-        async function searchAddress(query) {
-            const suggBox = document.getElementById('address-suggestions');
-            if(query.length < 3) { suggBox.classList.add('hidden'); return; }
-            
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(async () => {
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=tr&addressdetails=1&limit=5&viewbox=28.9,40.3,29.2,40.1`);
-                    const data = await res.json();
-                    suggBox.innerHTML = '';
-                    if(data.length > 0) {
-                        data.forEach(place => {
-                            const div = document.createElement('div');
-                            div.className = "p-2 hover:bg-gray-100 cursor-pointer text-xs text-gray-700 border-b border-gray-100 last:border-0";
-                            div.innerText = place.display_name;
-                            div.onclick = () => { document.getElementById('address-search').value = formatAddress(place.address); suggBox.classList.add('hidden'); };
-                            suggBox.appendChild(div);
-                        });
-                        suggBox.classList.remove('hidden');
-                    } else { suggBox.classList.add('hidden'); }
-                } catch(e) { console.error("Adres arama hatası:", e); }
-            }, 600);
-        }
-
-        function formatAddress(addr) {
-            let parts = [];
-            if(addr.province || addr.city || addr.town) parts.push(addr.province || addr.city || addr.town);
-            if(addr.county || addr.district) parts.push(addr.county || addr.district);
-            if(addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
-            if(addr.road || addr.pedestrian) parts.push(addr.road || addr.pedestrian);
-            return parts.join(', ');
-        }
-
         function prepareOrder() {
             const cName = document.getElementById('customer-name').value.trim();
             const cPhone = document.getElementById('customer-phone').value.trim();
             if(!cName || !cPhone) return alert('Lütfen Müşteri Bilgileri kısmındaki "Ad Soyad" ve "Telefon" alanlarını eksiksiz doldurunuz!');
 
-            const mainAddress = document.getElementById('address-search').value.trim();
-            const detailAddress = document.getElementById('address-detail').value.trim();
-            if(!mainAddress || !detailAddress) return alert('Lütfen adresinizi ve bina/kat detayı bilgilerinizi tam giriniz!');
+            const il = document.getElementById('addr-il').value.trim();
+            const ilce = document.getElementById('addr-ilce').value.trim();
+            const mah = document.getElementById('addr-mah').value.trim();
+            const sokak = document.getElementById('addr-sokak').value.trim();
+            const no = document.getElementById('addr-no').value.trim();
+            const kat = document.getElementById('addr-kat').value.trim();
+            const daire = document.getElementById('addr-daire').value.trim();
+
+            if(!il || !ilce || !mah || !sokak || !no) return alert('Lütfen adresinizi (İl, İlçe, Mahalle, Sokak, Bina No) eksiksiz giriniz!');
             
             const paymentRadio = document.querySelector('input[name="payment"]:checked');
             if(!paymentRadio) return alert("Lütfen bir ödeme yöntemi seçiniz!");
@@ -507,7 +507,7 @@
             
             if (distanceSettings && distanceSettings.length > 0) {
                 if (userDistanceKm === null) {
-                    return alert('Bulunduğunuz konuma gönderim şartlarını hesaplayabilmemiz için "Konumu Bul" butonuna tıklayarak GPS izni vermeniz gerekmektedir.');
+                    return alert('Bulunduğunuz konuma gönderim şartlarını hesaplayabilmemiz için "Konumu Bul" butonuna tıklamanız veya adresinizi girmeniz gerekmektedir.');
                 }
                 
                 let sortedSettings = [...distanceSettings].sort((a,b) => a.maxKm - b.maxKm);
@@ -533,7 +533,13 @@
                 message += "\n";
             });
             
-            message += `💰 *GENEL TOPLAM:* ${total}₺\n💳 *ÖDEME YÖNTEMİ:* ${paymentMethod}\n\n📍 *ADRES:*\n${mainAddress}\nDetay: ${detailAddress}`;
+            // Format: Mahalle Sokak No Kat Daire İlçe İl
+            let addressStr = `${mah} Mah. ${sokak} Sok. No:${no}`;
+            if (kat) addressStr += ` Kat:${kat}`;
+            if (daire) addressStr += ` Daire:${daire}`;
+            addressStr += ` ${ilce} / ${il}`;
+            
+            message += `💰 *GENEL TOPLAM:* ${total}₺\n💳 *ÖDEME YÖNTEMİ:* ${paymentMethod}\n\n📍 *ADRES:*\n${addressStr}`;
             
             const orderNote = document.getElementById('order-note').value.trim();
             if(orderNote) { message += `\n\n📝 *SİPARİŞ NOTU:*\n${orderNote}`; }
@@ -554,9 +560,7 @@
         function filterCategory(cat) { currentCategory = cat; document.querySelectorAll('.nav-link').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(cat))); renderMenu(); }
         
         window.onload = () => {
-            loadData().then(() => {
-                setTimeout(autoGetLocation, 1000);
-            });
+            loadData();
         };
     </script>
 </body>
