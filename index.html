@@ -193,7 +193,7 @@
 
     <script>
         const DB_URL = "https://oses-yunuseli-default-rtdb.firebaseio.com/oses.json";
-        let currentCategory = 'all';
+        let currentCategory = null;
         let items = [];
         let categories = [];
         let paymentMethods = [{name: "Kapıda Nakit", active: true}, {name: "Kapıda Kredi Kartı", active: true}];
@@ -336,6 +336,7 @@
                 if(data) {
                     items = data.items || [];
                     categories = data.categories || (data.catOrder ? data.catOrder.map(id => ({ id: id, name: id.toUpperCase() })) : []);
+                    if (categories.length > 0) currentCategory = categories[0].id;
                     paymentMethods = data.paymentMethods || paymentMethods;
                     deliverySettings = data.deliverySettings || deliverySettings;
                     distanceSettings = data.distanceSettings || [];
@@ -433,9 +434,10 @@
 
         function renderCategoryBar() {
             const bar = document.getElementById('category-bar');
-            bar.innerHTML = `<button onclick="filterCategory('all')" class="nav-link snap-start flex-shrink-0 py-1.5 px-4 text-[11px] md:text-sm active">Tümü</button>`;
+            bar.innerHTML = '';
             categories.forEach(cat => {
-                bar.innerHTML += `<button onclick="filterCategory('${cat.id}')" class="nav-link snap-start flex-shrink-0 py-1.5 px-4 text-[11px] md:text-sm">${cat.name}</button>`;
+                const isActive = currentCategory === cat.id ? 'active' : '';
+                bar.innerHTML += `<button onclick="filterCategory('${cat.id}')" class="nav-link snap-start flex-shrink-0 py-1.5 px-4 text-[11px] md:text-sm ${isActive}">${cat.name}</button>`;
             });
         }
 
