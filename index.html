@@ -16,7 +16,7 @@
         .nav-link.active { background-color: #ffffff; color: #97D700; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         .img-box { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #fff; }
         .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        #cart-modal, #preview-modal { backdrop-filter: blur(5px); }
+        #cart-modal, #preview-modal, #product-modal { backdrop-filter: blur(5px); }
         .payment-radio:checked + div { border-color: #97D700; background-color: #f0fdf4; color: #166534; }
         .suggestion-item { padding: 10px; font-size: 12px; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
         .suggestion-item:hover { background-color: #f9fafb; }
@@ -24,7 +24,7 @@
         .suggestion-item span { color: #9ca3af; font-size: 10px; }
     </style>
 </head>
-<body class="pb-36">
+<body class="pb-36 relative">
     <header class="oses-bg-green text-white">
         <div class="max-w-6xl mx-auto px-2 py-1.5 md:py-3 flex justify-between items-center gap-1">
             <div class="flex items-center gap-1.5 md:gap-4">
@@ -69,6 +69,32 @@
         </div>
     </div>
 
+    <div id="product-modal" class="fixed inset-0 bg-black/60 z-[80] hidden flex justify-center items-end md:items-center">
+        <div class="bg-white w-full md:w-[450px] max-h-[92dvh] rounded-t-3xl md:rounded-3xl flex flex-col shadow-2xl relative transition-transform">
+            <div class="flex justify-between items-center p-3 md:p-4 border-b border-gray-100 shrink-0">
+                <h3 class="font-black text-sm md:text-base uppercase tracking-tighter text-gray-800" id="pm-title">Ürün Seçenekleri</h3>
+                <button onclick="closeProductModal()" class="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-red-100 hover:text-red-600 transition font-bold text-xs uppercase tracking-widest">
+                    <span>Kapat</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 bg-gray-50/50" id="pm-body"></div>
+            
+            <div class="p-3 md:p-4 border-t border-gray-100 bg-white shrink-0 flex items-center gap-3">
+                <div class="flex items-center bg-gray-100 rounded-xl border border-gray-200 h-[46px]">
+                    <button onclick="changePmQty(-1)" class="px-4 h-full text-red-500 font-black text-lg flex items-center justify-center">-</button>
+                    <span id="pm-qty" class="px-2 font-black text-sm w-4 text-center">1</span>
+                    <button onclick="changePmQty(1)" class="px-4 h-full text-green-500 font-black text-lg flex items-center justify-center">+</button>
+                </div>
+                <button onclick="addModalItemToCart()" class="flex-1 h-[46px] bg-[#97D700] text-white rounded-xl font-black uppercase tracking-widest shadow-md hover:bg-[#85bd00] transition text-sm flex justify-between items-center px-4">
+                    <span>Ekle</span>
+                    <span id="pm-total-price">0₺</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="cart-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex justify-center items-end md:items-center">
         <div class="bg-white w-full md:w-[500px] h-[92dvh] md:h-auto md:max-h-[90vh] rounded-t-3xl md:rounded-3xl flex flex-col shadow-2xl relative transition-transform">
             
@@ -80,7 +106,7 @@
                 </button>
             </div>
             
-            <div class="flex-1 overflow-y-auto p-2 md:p-4 space-y-1.5 bg-gray-50/50" id="cart-items"></div>
+            <div class="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 bg-gray-50/50" id="cart-items"></div>
             
             <div class="p-3 md:p-4 border-t border-gray-100 bg-white rounded-b-3xl shrink-0 overflow-y-auto max-h-[60vh]">
                 
@@ -182,7 +208,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 text-xs text-gray-700 whitespace-pre-wrap font-medium leading-relaxed bg-gray-50" id="preview-content"></div>
+            <div class="flex-1 overflow-y-auto p-4 text-[13px] text-gray-700 whitespace-pre-wrap font-medium leading-relaxed bg-gray-50" id="preview-content"></div>
             <div class="p-4 border-t border-gray-100 bg-white rounded-b-3xl shrink-0">
                 <button onclick="confirmAndSend()" class="w-full bg-[#25D366] text-white py-3 md:py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-green-200 hover:bg-[#20b858] transition flex justify-center items-center gap-2 text-sm">
                     Onayla ve Gönder
@@ -204,16 +230,18 @@
         let shopCoords = { lat: 40.2468417, lon: 29.0153394 }; 
         let userDistanceKm = null; 
 
+        // --- YENİ EKLENEN: ÜRÜN SEÇENEK MODALI DEĞİŞKENLERİ ---
+        let pmCurrentItem = null;
+        let pmQty = 1;
+
         // --- SEPET VE ZAMAN KONTROLÜ ---
         function loadCartFromStorage() {
             const savedData = localStorage.getItem('oses_cart_v2');
             if (!savedData) return [];
-
             try {
                 const parsed = JSON.parse(savedData);
                 const now = new Date().getTime();
                 const diffMinutes = (now - parsed.timestamp) / (1000 * 60);
-
                 if (diffMinutes > 15) {
                     localStorage.removeItem('oses_cart_v2');
                     return [];
@@ -223,18 +251,14 @@
         }
 
         function saveCart() {
-            const cartData = {
-                items: cart,
-                timestamp: new Date().getTime()
-            };
+            const cartData = { items: cart, timestamp: new Date().getTime() };
             localStorage.setItem('oses_cart_v2', JSON.stringify(cartData));
             updateCartUI();
-            renderMenu();
+            renderMenu(); // Sepetteki adet bilgisini anasayfada güncellemek için
         }
 
-        // --- ADRES KAYDETME VE HATIRLAMA ---
+        // --- ADRES KAYDETME MANTIĞI ---
         const USER_DATA_FIELDS = ['customer-name', 'customer-phone', 'addr-ilce', 'addr-mah', 'addr-sokak', 'addr-no', 'addr-kat', 'addr-daire'];
-
         function saveUserData() {
             const userData = {};
             USER_DATA_FIELDS.forEach(id => {
@@ -250,11 +274,8 @@
                 const data = JSON.parse(saved);
                 USER_DATA_FIELDS.forEach(id => {
                     const el = document.getElementById(id);
-                    if (el && data[id]) {
-                        el.value = data[id];
-                    }
+                    if (el && data[id]) el.value = data[id];
                 });
-                // Bilgiler yüklendikten sonra mesafe hesaplamayı dene
                 if (data['addr-no']) geocodeAddress();
             }
         }
@@ -320,7 +341,6 @@
             saveUserData();
         }
 
-        // --- DİĞER MANTIKLAR ---
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -344,8 +364,8 @@
                 renderCategoryBar();
                 renderPaymentMethods();
                 renderDeliveryInfo();
-                renderMenu();
                 cart = loadCartFromStorage();
+                renderMenu();
                 loadUserData();
                 updateCartUI();
             } catch(e) {}
@@ -461,41 +481,154 @@
             if(badgeEl) deliverySettings.isBusy ? badgeEl.classList.remove('hidden') : badgeEl.classList.add('hidden');
         }
 
+        // --- ANA SAYFA LİSTELEME GÜNCELLEMESİ ---
         function renderMenu() {
             const container = document.getElementById('menu-container');
             container.innerHTML = '';
             let displayItems = currentCategory === 'all' ? items : items.filter(i => i.cat === currentCategory);
+            
             displayItems.forEach((item) => {
-                const cartItemId = item.id + '_default';
-                const cartItem = cart.find(c => c.cartItemId === cartItemId);
-                const qty = cartItem ? cartItem.qty : 0;
+                // Bu ana ürüne ait sepette kaç adet varyasyon var hesapla
+                const itemCartItems = cart.filter(c => c.id === item.id);
+                const totalQty = itemCartItems.reduce((sum, c) => sum + c.qty, 0);
+
                 container.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer p-1.5 md:p-3 flex flex-col justify-between h-full relative" onclick="location.href='detay.html?id=${item.id}'">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer p-1.5 md:p-3 flex flex-col justify-between h-full relative hover:border-[#97D700] transition-colors" onclick="openProductModal('${item.id}')">
+                        
+                        ${totalQty > 0 ? `<div class="absolute top-1.5 right-1.5 md:top-3 md:right-3 bg-red-500 text-white w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-[10px] md:text-xs font-black z-10 border-2 border-white shadow-sm">${totalQty}</div>` : ''}
+                        
                         <div class="flex flex-col flex-1">
                             <div class="img-box rounded-lg overflow-hidden"><img src="${item.img || 'https://www.oses.com.tr/assets/images/oses.png'}" onerror="this.src='https://www.oses.com.tr/assets/images/oses.png'"></div>
                             <div class="mt-1 md:mt-2 text-center flex flex-col items-center justify-center flex-1">
-                                <h3 class="text-[8px] md:text-[13px] font-bold text-[#4c7c00] uppercase mb-0.5 leading-tight">${item.name}</h3>
-                                <div class="text-[11px] md:text-base font-black oses-red mt-0.5">₺${item.price},00</div>
+                                <h3 class="text-[9px] md:text-[13px] font-bold text-[#4c7c00] uppercase mb-0.5 leading-tight">${item.name}</h3>
+                                <div class="text-[12px] md:text-base font-black oses-red mt-0.5">${item.price}₺</div>
                             </div>
                         </div>
-                        ${qty > 0 ? `
-                            <div class="mt-2 flex items-center justify-between bg-gray-100 rounded-lg overflow-hidden" onclick="event.stopPropagation()">
-                                <button onclick="updateQty('${cartItemId}', -1)" class="w-1/3 py-1 bg-red-500 text-white font-black text-xs">-</button>
-                                <span class="w-1/3 text-center font-black text-xs">${qty}</span>
-                                <button onclick="updateQty('${cartItemId}', 1)" class="w-1/3 py-1 bg-green-500 text-white font-black text-xs">+</button>
-                            </div>
-                        ` : `
-                            <button onclick="event.stopPropagation(); addToCartSimple('${item.id}', '${item.name}', ${item.price})" class="mt-2 w-full bg-[#97D700] text-white py-1.5 rounded-lg font-bold uppercase text-[10px]">Ekle</button>
-                        `}
+                        
+                        <button class="mt-2 w-full bg-[#97D700] text-white py-1.5 rounded-lg font-bold uppercase text-[10px] tracking-wide hover:bg-[#85bd00] transition pointer-events-none">
+                            ${totalQty > 0 ? 'Tekrar Ekle' : 'Ekle'}
+                        </button>
                     </div>`;
             });
         }
 
-        function addToCartSimple(id, name, price) {
-            cart.push({cartItemId: id + '_default', id: id, name: name, price: Number(price), qty: 1});
-            saveCart();
+        // --- YENİ EKLENEN: MODAL MANTIĞI VE SEPETE EKLEME ---
+        function openProductModal(id) {
+            pmCurrentItem = items.find(i => i.id === id);
+            if(!pmCurrentItem) return;
+            
+            pmQty = 1;
+            document.getElementById('pm-qty').innerText = pmQty;
+            document.getElementById('pm-title').innerText = pmCurrentItem.name;
+
+            let bodyHtml = `
+                <div class="bg-white rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-sm flex items-center justify-center p-2" style="aspect-ratio: 16/9;">
+                    <img src="${pmCurrentItem.img || 'https://www.oses.com.tr/assets/images/oses.png'}" onerror="this.src='https://www.oses.com.tr/assets/images/oses.png'" class="max-w-full max-h-full object-contain">
+                </div>
+            `;
+
+            // Çıkarılabilir Malzemeler (Varsa)
+            if(pmCurrentItem.materials && pmCurrentItem.materials.length > 0) {
+                bodyHtml += `<div class="mb-4">
+                    <h4 class="font-black text-[10px] text-gray-400 uppercase tracking-widest mb-1.5">Çıkarılabilir Malzemeler</h4>
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100 shadow-sm">`;
+                
+                pmCurrentItem.materials.forEach((mat) => {
+                    let mName = typeof mat === 'object' ? mat.name : mat;
+                    bodyHtml += `
+                        <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition active:bg-gray-100">
+                            <span class="text-xs font-bold text-gray-700 uppercase">${mName}</span>
+                            <input type="checkbox" checked class="pm-material w-4 h-4 text-[#97D700] border-gray-300 rounded focus:ring-[#97D700]" value="${mName}">
+                        </label>`;
+                });
+                bodyHtml += `</div></div>`;
+            }
+
+            // Ekstralar (Varsa)
+            if(pmCurrentItem.extras && pmCurrentItem.extras.length > 0) {
+                bodyHtml += `<div class="mb-2">
+                    <h4 class="font-black text-[10px] text-gray-400 uppercase tracking-widest mb-1.5">Ekstralar</h4>
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100 shadow-sm">`;
+                
+                pmCurrentItem.extras.forEach((ext) => {
+                    bodyHtml += `
+                        <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition active:bg-gray-100">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-gray-700 uppercase">${ext.name}</span>
+                                <span class="text-[10px] font-black text-[#CB333B] mt-0.5">+${ext.price}₺</span>
+                            </div>
+                            <input type="checkbox" class="pm-extra w-4 h-4 text-[#97D700] border-gray-300 rounded focus:ring-[#97D700]" data-price="${ext.price}" value="${ext.name}" onchange="updatePmPrice()">
+                        </label>`;
+                });
+                bodyHtml += `</div></div>`;
+            }
+
+            document.getElementById('pm-body').innerHTML = bodyHtml;
+            updatePmPrice();
+            document.getElementById('product-modal').classList.remove('hidden');
         }
 
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        function changePmQty(change) {
+            pmQty += change;
+            if(pmQty < 1) pmQty = 1;
+            document.getElementById('pm-qty').innerText = pmQty;
+            updatePmPrice();
+        }
+
+        function updatePmPrice() {
+            let basePrice = Number(pmCurrentItem.price);
+            let extrasPriceTotal = 0;
+            document.querySelectorAll('.pm-extra:checked').forEach(cb => {
+                extrasPriceTotal += Number(cb.getAttribute('data-price'));
+            });
+            let total = (basePrice + extrasPriceTotal) * pmQty;
+            document.getElementById('pm-total-price').innerText = total + '₺';
+        }
+
+        function addModalItemToCart() {
+            let removedMaterials = [];
+            document.querySelectorAll('.pm-material:not(:checked)').forEach(cb => {
+                removedMaterials.push(cb.value);
+            });
+
+            let selectedExtras = [];
+            let extrasPriceTotal = 0;
+            document.querySelectorAll('.pm-extra:checked').forEach(cb => {
+                selectedExtras.push({name: cb.value, price: Number(cb.getAttribute('data-price'))});
+                extrasPriceTotal += Number(cb.getAttribute('data-price'));
+            });
+
+            let unitPrice = Number(pmCurrentItem.price) + extrasPriceTotal;
+
+            // Özelleştirmelere göre benzersiz bir ID oluştur ki sepette farklı ürünler birbirine karışmasın
+            let optionsStr = JSON.stringify({rem: removedMaterials, ext: selectedExtras.map(e=>e.name)});
+            let uniqueSuffix = btoa(unescape(encodeURIComponent(optionsStr))).replace(/[^a-zA-Z0-9]/g, '');
+            let cartItemId = pmCurrentItem.id + '_' + uniqueSuffix;
+
+            let existingIdx = cart.findIndex(c => c.cartItemId === cartItemId);
+            if(existingIdx > -1) {
+                cart[existingIdx].qty += pmQty;
+            } else {
+                cart.push({
+                    cartItemId: cartItemId,
+                    id: pmCurrentItem.id,
+                    name: pmCurrentItem.name,
+                    price: unitPrice,
+                    qty: pmQty,
+                    removed: removedMaterials,
+                    extras: selectedExtras
+                });
+            }
+
+            saveCart();
+            closeProductModal();
+        }
+
+        // --- SEPET MANTIĞI VE UI GÜNCELLEMELERİ ---
         function updateQty(cartItemId, change) {
             const idx = cart.findIndex(c => c.cartItemId === cartItemId);
             if(idx > -1) { cart[idx].qty += change; if(cart[idx].qty <= 0) cart.splice(idx, 1); }
@@ -519,16 +652,27 @@
             const list = document.getElementById('cart-items');
             list.innerHTML = '';
             cart.forEach(c => {
+                let optionsHtml = '';
+                if(c.removed && c.removed.length > 0) {
+                    optionsHtml += `<div class="text-[9px] text-red-500 font-medium leading-tight mt-0.5">Çıkarılan: ${c.removed.join(', ')}</div>`;
+                }
+                if(c.extras && c.extras.length > 0) {
+                    optionsHtml += `<div class="text-[9px] text-green-600 font-medium leading-tight mt-0.5">Ekstra: ${c.extras.map(e=>e.name).join(', ')}</div>`;
+                }
+
                 list.innerHTML += `
-                <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-200">
-                    <div class="text-[11px] font-black text-gray-800 truncate">${c.name}</div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center bg-gray-100 rounded border">
-                            <button onclick="updateQty('${c.cartItemId}', -1)" class="px-2 text-red-500 font-black">-</button>
-                            <span class="px-1 text-[11px] font-black">${c.qty}</span>
-                            <button onclick="updateQty('${c.cartItemId}', 1)" class="px-2 text-green-500 font-black">+</button>
+                <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex-1 min-w-0 pr-2">
+                        <div class="text-[11px] font-black text-gray-800 uppercase leading-tight">${c.name}</div>
+                        ${optionsHtml}
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex items-center bg-gray-50 rounded-lg border border-gray-200 overflow-hidden h-7">
+                            <button onclick="updateQty('${c.cartItemId}', -1)" class="px-2.5 h-full text-red-500 font-black flex items-center justify-center hover:bg-gray-100 transition">-</button>
+                            <span class="px-1 text-[11px] font-black w-4 text-center">${c.qty}</span>
+                            <button onclick="updateQty('${c.cartItemId}', 1)" class="px-2.5 h-full text-green-500 font-black flex items-center justify-center hover:bg-gray-100 transition">+</button>
                         </div>
-                        <div class="font-black text-xs text-[#CB333B]">${c.price * c.qty}₺</div>
+                        <div class="font-black text-xs text-[#CB333B] w-12 text-right">${c.price * c.qty}₺</div>
                     </div>
                 </div>`;
             });
@@ -543,15 +687,30 @@
             const sokak = document.getElementById('addr-sokak').value.trim();
             const no = document.getElementById('addr-no').value.trim();
             if(!cName || !cPhone || !ilce || !mah || !sokak || !no) return alert("Lütfen tüm zorunlu alanları doldurun!");
+            
             const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
             if (distanceSettings.length) {
                 let setting = [...distanceSettings].sort((a,b) => a.maxKm - b.maxKm).find(s => userDistanceKm <= s.maxKm);
                 if (!setting || total < setting.minPrice) return alert("Minimum sipariş tutarı karşılanmıyor veya bölge dışındasınız!");
             }
+            
+            // Mesaj Formatı
             let msg = `📦 *YENİ SİPARİŞ*\n👤 ${cName}\n📞 ${cPhone}\n\n`;
-            cart.forEach(c => msg += `▪️ ${c.qty}x ${c.name} (${c.price*c.qty}₺)\n`);
+            cart.forEach(c => {
+                msg += `▪️ ${c.qty}x ${c.name} (${c.price * c.qty}₺)\n`;
+                if(c.removed && c.removed.length > 0) msg += `   ❌ Çıkarılacak: ${c.removed.join(', ')}\n`;
+                if(c.extras && c.extras.length > 0) msg += `   ✅ Ekstralar: ${c.extras.map(e=>e.name).join(', ')}\n`;
+            });
+            
+            let note = document.getElementById('order-note').value.trim();
+            if(note) msg += `\n📝 *NOT:* ${note}\n`;
+            
+            let paymentSel = document.querySelector('input[name="payment"]:checked');
+            if(paymentSel) msg += `\n💳 *ÖDEME:* ${paymentSel.value}\n`;
+
             msg += `\n📍 *ADRES:* ${mah} Mah. ${sokak} No:${no} ${ilce}/Bursa\n`;
-            msg += `💰 *TOPLAM:* ${total}₺`;
+            msg += `\n💰 *TOPLAM:* ${total}₺`;
+            
             finalOrderMessage = msg;
             document.getElementById('preview-content').innerText = msg;
             document.getElementById('preview-modal').classList.remove('hidden');
